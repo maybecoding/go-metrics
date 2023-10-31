@@ -1,4 +1,4 @@
-package memstorage
+package smemstorage
 
 type MemStorage struct {
 	dataGauge   map[string]float64
