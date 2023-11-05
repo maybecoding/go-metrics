@@ -41,6 +41,7 @@ func TestController(t *testing.T) {
 			w := httptest.NewRecorder()
 			contr.handleUpdate(w, req)
 			res := w.Result()
+			res.Body.Close()
 			assert.Equal(t, tt.want.code, res.StatusCode)
 		})
 	}

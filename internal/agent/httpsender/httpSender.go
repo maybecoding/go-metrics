@@ -6,14 +6,14 @@ import (
 	"net/http"
 )
 
-// HttpSender Пусть для общего развития это будет функция
-type HttpSender func(metrics []*app.Metric)
+// HTTPSender Пусть для общего развития это будет функция
+type HTTPSender func(metrics []*app.Metric)
 
-func (s HttpSender) Send(metrics []*app.Metric) {
+func (s HTTPSender) Send(metrics []*app.Metric) {
 	s(metrics)
 }
 
-func New(address string, method string, template string) HttpSender {
+func New(address string, method string, template string) HTTPSender {
 	return func(metrics []*app.Metric) {
 		for _, metric := range metrics {
 			url := address + fmt.Sprintf(template, metric.Type, metric.Name, metric.Value)
@@ -25,6 +25,7 @@ func New(address string, method string, template string) HttpSender {
 			}
 			req.Header.Add("Content-Type", "text/plan")
 			resp, err := http.DefaultClient.Do(req)
+			resp.Body.Close()
 			if err != nil {
 				fmt.Println("error due sending request: ", err)
 				continue
