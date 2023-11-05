@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/memStorage"
+	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 	"github.com/stretchr/testify/assert"
 	"net/http/httptest"
 	"testing"

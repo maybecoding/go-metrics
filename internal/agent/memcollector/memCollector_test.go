@@ -1,4 +1,4 @@
-package memCollector
+package memcollector
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"

@@ -1,4 +1,4 @@
-package httpSender
+package httpsender
 
 import (
 	"fmt"

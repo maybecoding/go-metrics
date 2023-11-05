@@ -4,7 +4,7 @@ import (
 	"github.com/maybecoding/go-metrics.git/cmd/server/config"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
 	"github.com/maybecoding/go-metrics.git/internal/server/controller"
-	"github.com/maybecoding/go-metrics.git/internal/server/memStorage"
+	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 )
 
 func main() {
@@ -16,9 +16,9 @@ func main() {
 	app := sapp.New(store)
 
 	// Создаем контроллер и вверяем ему приложение
-	controller := controller.New(app, cfg.Server.Address)
+	contr := controller.New(app, cfg.Server.Address)
 
 	// Запускаем
-	controller.Start()
+	contr.Start()
 
 }
