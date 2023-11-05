@@ -1,4 +1,4 @@
-package sapp
+package app
 
 import (
 	"fmt"

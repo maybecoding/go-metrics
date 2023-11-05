@@ -1,4 +1,4 @@
-package scontroller
+package controller
 
 import (
 	"net/http"

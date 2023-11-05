@@ -1,8 +1,8 @@
-package scontroller
+package controller
 
 import (
 	"fmt"
-	sapp "github.com/maybecoding/go-metrics.git/internal/server/sapp"
+	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
 	"net/http"
 )
 

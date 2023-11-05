@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/maybecoding/go-metrics.git/cmd/server/config"
-	sapp "github.com/maybecoding/go-metrics.git/internal/server/sapp"
-	"github.com/maybecoding/go-metrics.git/internal/server/scontroller"
-	"github.com/maybecoding/go-metrics.git/internal/server/smemstorage"
+	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/controller"
+	"github.com/maybecoding/go-metrics.git/internal/server/memStorage"
 )
 
 func main() {
@@ -12,11 +12,11 @@ func main() {
 	cfg := config.NewConfig()
 
 	// Создаем хранилище и приложение, приложению даем хранилище
-	store := smemstorage.NewMemStorage()
+	var store sapp.Storage = smemstorage.NewMemStorage()
 	app := sapp.New(store)
 
 	// Создаем контроллер и вверяем ему приложение
-	controller := scontroller.New(app, cfg.Server.Address)
+	controller := controller.New(app, cfg.Server.Address)
 
 	// Запускаем
 	controller.Start()
