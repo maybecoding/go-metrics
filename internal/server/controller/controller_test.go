@@ -61,6 +61,8 @@ func TestController(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			res, get := testRequest(t, ts, tt.method, tt.url)
+			defer res.Body.Close()
+
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if tt.method == "GET" {
 				assert.Equal(t, tt.want.getResult, get)
