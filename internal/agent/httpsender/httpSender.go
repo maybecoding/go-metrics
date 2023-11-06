@@ -25,11 +25,12 @@ func New(address string, method string, template string) HTTPSender {
 			}
 			req.Header.Add("Content-Type", "text/plan")
 			resp, err := http.DefaultClient.Do(req)
-			defer resp.Body.Close()
+
 			if err != nil {
 				fmt.Println("error due sending request: ", err)
 				continue
 			}
+			defer resp.Body.Close()
 			if resp.StatusCode != 200 {
 				fmt.Printf("data hasn't sent status code is:%d \n", err)
 				continue
