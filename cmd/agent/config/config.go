@@ -1,5 +1,10 @@
 package config
 
+import (
+	"flag"
+	"log"
+)
+
 type (
 	Config struct {
 		App
@@ -19,16 +24,23 @@ type (
 )
 
 func New() *Config {
+	serverAddress := flag.String("a", "localhost:8080", "HTTP server endpoint")
+	reportInterval := flag.Int("r", 10, "metric report interval")
+	poolInterval := flag.Int("p", 1, "metric pool interval")
+	flag.Parse()
+	if len(flag.Args()) > 0 {
+		log.Fatal("undeclared flags provided")
+	}
 	return &Config{
 		App: App{
-			CollectIntervalSec: 2,
-			SendIntervalSec:    2,
+			CollectIntervalSec: *poolInterval,
+			SendIntervalSec:    *reportInterval,
 		},
 
 		Sender: Sender{
-			Address:  "http://localhost:8080/",
+			Address:  *serverAddress,
 			Method:   "POST",
-			Template: "update/%s/%s/%s",
+			Template: "http://%s/update/%s/%s/%s",
 		},
 	}
 }

@@ -16,7 +16,7 @@ func (s HTTPSender) Send(metrics []*app.Metric) {
 func New(address string, method string, template string) HTTPSender {
 	return func(metrics []*app.Metric) {
 		for _, metric := range metrics {
-			url := address + fmt.Sprintf(template, metric.Type, metric.Name, metric.Value)
+			url := fmt.Sprintf(template, address, metric.Type, metric.Name, metric.Value)
 
 			req, err := http.NewRequest(method, url, nil)
 			if err != nil {

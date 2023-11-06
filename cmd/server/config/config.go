@@ -1,5 +1,10 @@
 package config
 
+import (
+	"flag"
+	"log"
+)
+
 type (
 	Config struct {
 		Server
@@ -11,5 +16,10 @@ type (
 )
 
 func NewConfig() *Config {
-	return &Config{Server{Address: ":8080"}}
+	serverAddress := flag.String("a", "localhost:8080", "Endpoint HTTP-server address")
+	flag.Parse()
+	if len(flag.Args()) > 0 {
+		log.Fatal("undeclared flags provided")
+	}
+	return &Config{Server{Address: *serverAddress}}
 }
