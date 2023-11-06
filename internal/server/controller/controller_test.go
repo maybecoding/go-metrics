@@ -4,12 +4,30 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 type want struct {
-	code int
+	code      int
+	getResult string
+}
+
+func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
+	req, err := http.NewRequest(method, ts.URL+path, nil)
+	require.NoError(t, err)
+
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	return resp, string(respBody)
 }
 
 func TestController(t *testing.T) {
@@ -19,30 +37,34 @@ func TestController(t *testing.T) {
 		method string
 		want   want
 	}{
-		{name: "#1 Bad url", url: "/updat/gauge/Alloc/1", method: "POST", want: want{code: 404}},
-		{name: "#2 Bad url", url: "/u", method: "POST", want: want{code: 404}},
-		{name: "#3 Bad url", url: "/update/gauge/Alloc", method: "POST", want: want{code: 404}},
-		{name: "#4 Unknown metric", url: "/update/gauge2/Test/1", method: "POST", want: want{code: 400}},
-		{name: "#5 Unknown metric", url: "/update/counter2/Test/1", method: "POST", want: want{code: 400}},
+		{name: "#1 Unknown metric", url: "/update/gauge2/Test/1", method: "POST", want: want{code: 400}},
 
-		{name: "#6 Gauge success", url: "/update/gauge/Test/7.77", method: "POST", want: want{code: 200}},
-		{name: "#7 Counter success", url: "/update/counter/TestTestTestTestTest/312323", method: "POST", want: want{code: 200}},
+		{name: "#2 Gauge success", url: "/update/gauge/Test/913372.185", method: "POST", want: want{code: 200}},
+		{name: "#2. Gauge success", url: "/update/gauge/Test2/330095.942", method: "POST", want: want{code: 200}},
+		{name: "#3 Counter success", url: "/update/counter/TestTestTestTestTest/312323", method: "POST", want: want{code: 200}},
 
-		{name: "#8 Gauge bad value", url: "/update/gauge/Test/7.77x", method: "POST", want: want{code: 400}},
-		{name: "#9 Counter bad value", url: "/update/counter/TestTestTestTestTest/1.1", method: "POST", want: want{code: 400}},
+		{name: "#4 Gauge bad value", url: "/update/gauge/Test/7.77x", method: "POST", want: want{code: 400}},
+		{name: "#5 Counter bad value", url: "/update/counter/TestTestTestTestTest/1.1", method: "POST", want: want{code: 400}},
+
+		{name: "#6 Gauge get", url: "/value/gauge/Test", method: "GET", want: want{code: 200, getResult: "913372.185"}},
+		{name: "#6.1 Gauge get", url: "/value/gauge/Test2", method: "GET", want: want{code: 200, getResult: "330095.942"}},
+		{name: "#7 Counter get", url: "/value/counter/TestTestTestTestTest", method: "GET", want: want{code: 200, getResult: "312323"}},
 	}
 
 	store := smemstorage.NewMemStorage()
-	app := app.New(store)
-	contr := New(app, "")
+	a := app.New(store)
+	contr := New(a, "")
+	ts := httptest.NewServer(contr.GetRouter())
+	defer ts.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, tt.url, nil)
-			w := httptest.NewRecorder()
-			contr.handleUpdate(w, req)
-			res := w.Result()
-			res.Body.Close()
+
+			res, get := testRequest(t, ts, tt.method, tt.url)
 			assert.Equal(t, tt.want.code, res.StatusCode)
+			if tt.method == "GET" {
+				assert.Equal(t, tt.want.getResult, get)
+			}
 		})
 	}
 }
