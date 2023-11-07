@@ -6,35 +6,38 @@ import (
 	"net/http"
 )
 
-// HTTPSender Пусть для общего развития это будет функция
-type HTTPSender func(metrics []*app.Metric)
-
-func (s HTTPSender) Send(metrics []*app.Metric) {
-	s(metrics)
+// HTTPSender Структура по отправке
+type HTTPSender struct {
+	address  string
+	method   string
+	template string
 }
 
-func New(address string, method string, template string) HTTPSender {
-	return func(metrics []*app.Metric) {
-		for _, metric := range metrics {
-			url := fmt.Sprintf(template, address, metric.Type, metric.Name, metric.Value)
+func (s *HTTPSender) Send(metrics []*app.Metric) {
+	for _, metric := range metrics {
+		url := fmt.Sprintf(s.template, s.address, metric.Type, metric.Name, metric.Value)
 
-			req, err := http.NewRequest(method, url, nil)
-			if err != nil {
-				fmt.Println("error due request creation: ", err)
-				continue
-			}
-			req.Header.Add("Content-Type", "text/plan")
-			resp, err := http.DefaultClient.Do(req)
-
-			if err != nil {
-				fmt.Println("error due sending request: ", err)
-				continue
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode != 200 {
-				fmt.Printf("data hasn't sent status code is:%d \n", err)
-				continue
-			}
+		req, err := http.NewRequest(s.method, url, nil)
+		if err != nil {
+			fmt.Println("error due request creation: ", err)
+			continue
 		}
+		req.Header.Add("Content-Type", "text/plan")
+		resp, err := http.DefaultClient.Do(req)
+
+		if err != nil {
+			fmt.Println("error due sending request: ", err)
+			continue
+		}
+
+		if resp.StatusCode != 200 {
+			fmt.Printf("data hasn't sent status code is:%d \n", err)
+			continue
+		}
+		_ = resp.Body.Close()
 	}
+}
+
+func New(address string, method string, template string) *HTTPSender {
+	return &HTTPSender{address: address, method: method, template: template}
 }

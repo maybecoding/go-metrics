@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/maybecoding/go-metrics.git/cmd/server/config"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/controller"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 )

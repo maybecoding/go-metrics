@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/maybecoding/go-metrics.git/cmd/agent/config"
 	aApp "github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/internal/agent/httpsender"
 	"github.com/maybecoding/go-metrics.git/internal/agent/memcollector"
 )

@@ -1,12 +1,22 @@
 package app
 
 import (
-	"fmt"
 	"strconv"
 )
 
 type App struct {
 	store Storage
+}
+
+type Storage interface {
+	SetMetricGauge(gauge *MetricGauge)
+	SetMetricCounter(counter *MetricCounter)
+
+	GetMetricGauge(name string) (TypeGauge, error)
+	GetMetricCounter(name string) (TypeCounter, error)
+
+	GetMetricGaugeAll() []*MetricGauge
+	GetMetricCounterAll() []*MetricCounter
 }
 
 const (
@@ -56,23 +66,18 @@ func (a *App) GetMetricsAll() []*Metric {
 	mtrGauge := a.store.GetMetricGaugeAll()
 	mtrCounter := a.store.GetMetricCounterAll()
 
-	metrics := make([]*Metric, len(mtrGauge)+len(mtrCounter))
+	metrics := make([]*Metric, 0, len(mtrGauge)+len(mtrCounter))
 
-	m, g, c := 0, 0, 0
-	for g < len(mtrGauge) {
-		fmt.Println("g:", g)
-		name := mtrGauge[g].Name
-		value := strconv.FormatInt(int64(mtrGauge[g].Value), 10)
-		metrics[m] = &Metric{Type: Gauge, Name: name, Value: value}
-		m += 1
-		g += 1
+	for _, m := range mtrGauge {
+		name := m.Name
+		value := strconv.FormatInt(int64(m.Value), 10)
+		metrics = append(metrics, &Metric{Type: Gauge, Name: name, Value: value})
 	}
-	for c < len(mtrCounter) {
-		name := mtrGauge[c].Name
-		value := strconv.FormatFloat(float64(mtrCounter[c].Value), formatFloat, -1, 64)
-		metrics[m] = &Metric{Type: Counter, Name: name, Value: value}
-		m += 1
-		c += 1
+
+	for _, m := range mtrCounter {
+		name := m.Name
+		value := strconv.FormatFloat(float64(m.Value), formatFloat, -1, 64)
+		metrics = append(metrics, &Metric{Type: Gauge, Name: name, Value: value})
 	}
 
 	return metrics

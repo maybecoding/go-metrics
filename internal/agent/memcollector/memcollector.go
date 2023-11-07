@@ -63,12 +63,11 @@ func (c *MemCollector) CollectMetrics() {
 }
 
 func (c *MemCollector) GetMetrics() []*app.Metric {
-	metrics := make([]*app.Metric, len(c.gaugeMetrics)+1)
-	i := 0
+	metrics := make([]*app.Metric, 0, len(c.gaugeMetrics)+1)
+
 	for mType, m := range c.gaugeMetrics {
-		metrics[i] = &app.Metric{Type: MetricGauge, Name: mType, Value: strconv.FormatFloat(m, 'f', -1, 64)}
-		i += 1
+		metrics = append(metrics, &app.Metric{Type: MetricGauge, Name: mType, Value: strconv.FormatFloat(m, 'f', -1, 64)})
 	}
-	metrics[i] = &app.Metric{Type: MetricCounter, Name: "PoolCount", Value: strconv.FormatInt(c.poolCount, 10)}
+	metrics = append(metrics, &app.Metric{Type: MetricCounter, Name: "PoolCount", Value: strconv.FormatInt(c.poolCount, 10)})
 	return metrics
 }
