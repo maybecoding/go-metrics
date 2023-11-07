@@ -34,21 +34,17 @@ func (m *MemStorage) GetMetricCounter(name string) (app.TypeCounter, error) {
 }
 
 func (m *MemStorage) GetMetricGaugeAll() []*app.MetricGauge {
-	mtr := make([]*app.MetricGauge, len(m.dataGauge))
-	i := 0
+	mtr := make([]*app.MetricGauge, 0, len(m.dataGauge))
 	for name, value := range m.dataGauge {
-		mtr[i] = &app.MetricGauge{Name: name, Value: value}
-		i += 1
+		mtr = append(mtr, &app.MetricGauge{Name: name, Value: value})
 	}
 	return mtr
 }
 
 func (m *MemStorage) GetMetricCounterAll() []*app.MetricCounter {
-	mtr := make([]*app.MetricCounter, len(m.dataCounter))
-	i := 0
+	mtr := make([]*app.MetricCounter, 0, len(m.dataCounter))
 	for name, value := range m.dataCounter {
-		mtr[i] = &app.MetricCounter{Name: name, Value: value}
-		i += 1
+		mtr = append(mtr, &app.MetricCounter{Name: name, Value: value})
 	}
 	return mtr
 }
