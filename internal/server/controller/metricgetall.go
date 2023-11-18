@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (c Controller) metricGetAll(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) metricGetAll(w http.ResponseWriter, r *http.Request) {
 	mtr := c.app.GetMetricsAll()
 	var result strings.Builder
 

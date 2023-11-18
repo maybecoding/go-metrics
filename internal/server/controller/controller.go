@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/logger"
 	"net/http"
 )
 
@@ -27,9 +27,10 @@ func (c *Controller) GetRouter() chi.Router {
 func (c *Controller) Start() {
 
 	addr := c.serverAddress
-	err := http.ListenAndServe(addr, c.GetRouter())
+	logger.Log.Info().Str("address", addr).Msg("Starting server")
+	err := http.ListenAndServe(addr, logger.Handler(c.GetRouter()))
 
 	if err != nil {
-		panic(fmt.Errorf("server on %v failed: %v", addr, err))
+		logger.Log.Fatal().Err(err).Msg("Failed to start server")
 	}
 }
