@@ -63,7 +63,6 @@ func Init(level string) {
 	zl.Debug().Str("log level", level).Msg("log initialized")
 
 	Log = &zl
-	return
 }
 
 func Handler(h http.Handler) http.Handler {
