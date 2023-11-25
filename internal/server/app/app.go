@@ -20,7 +20,7 @@ type Storage interface {
 }
 
 const (
-	formatFloat = 'f'
+	FmtFloat = 'f'
 )
 
 func (a *App) UpdateMetric(mType string, name string, value string) error {
@@ -50,7 +50,7 @@ func (a *App) GetMetric(mType string, name string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return strconv.FormatFloat(float64(value), formatFloat, -1, 64), nil
+		return strconv.FormatFloat(float64(value), FmtFloat, -1, 64), nil
 	case "counter":
 		value, err := a.store.GetMetricCounter(name)
 		if err != nil {
@@ -76,7 +76,7 @@ func (a *App) GetMetricsAll() []*Metric {
 
 	for _, m := range mtrCounter {
 		name := m.Name
-		value := strconv.FormatFloat(float64(m.Value), formatFloat, -1, 64)
+		value := strconv.FormatFloat(float64(m.Value), FmtFloat, -1, 64)
 		metrics = append(metrics, &Metric{Type: Gauge, Name: name, Value: value})
 	}
 

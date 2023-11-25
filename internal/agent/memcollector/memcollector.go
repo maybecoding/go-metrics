@@ -4,12 +4,6 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"math/rand"
 	"runtime"
-	"strconv"
-)
-
-const (
-	MetricGauge   = "gauge"
-	MetricCounter = "counter"
 )
 
 type MemCollector struct {
@@ -62,12 +56,12 @@ func (c *MemCollector) CollectMetrics() {
 
 }
 
-func (c *MemCollector) GetMetrics() []*app.Metric {
-	metrics := make([]*app.Metric, 0, len(c.gaugeMetrics)+1)
+func (c *MemCollector) GetMetrics() []*app.Metrics {
+	metrics := make([]*app.Metrics, 0, len(c.gaugeMetrics)+1)
 
 	for mType, m := range c.gaugeMetrics {
-		metrics = append(metrics, &app.Metric{Type: MetricGauge, Name: mType, Value: strconv.FormatFloat(m, 'f', -1, 64)})
+		metrics = append(metrics, &app.Metrics{MType: app.MetricGauge, ID: mType, Value: &m})
 	}
-	metrics = append(metrics, &app.Metric{Type: MetricCounter, Name: "PoolCount", Value: strconv.FormatInt(c.poolCount, 10)})
+	metrics = append(metrics, &app.Metrics{MType: app.MetricCounter, ID: "PoolCount", Delta: &c.poolCount})
 	return metrics
 }

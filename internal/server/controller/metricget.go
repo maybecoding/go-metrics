@@ -20,6 +20,7 @@ func (c *Controller) metricGet(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	w.Write([]byte(value))
+
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(value))
 }

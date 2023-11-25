@@ -8,8 +8,8 @@ import (
 
 type (
 	Config struct {
-		Server
-		Log
+		Server Server
+		Log    Log
 	}
 
 	Server struct {
