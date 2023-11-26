@@ -17,15 +17,14 @@ func (c *Controller) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	status := http.StatusOK
 	logMessage := ""
 	defer func() {
-		w.WriteHeader(status)
+
 		if err != nil {
 			logger.Log.Debug().Err(err).Msg(logMessage)
 		}
 
-		if response != nil {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(response)
-		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(status)
+		_, _ = w.Write(response)
 
 	}()
 
@@ -53,9 +52,33 @@ func (c *Controller) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 		status, logMessage = http.StatusBadRequest, "failed to update metric in app"
 		return
 	}
+	mOut := model.Metrics{
+		MType: m.MType,
+		ID:    m.ID,
+	}
+	procValStr, err := c.app.GetMetric(m.MType, m.ID)
+	if err != nil {
+		status, logMessage = http.StatusBadRequest, "failed to get metric value after update"
+		return
+	}
+	if m.MType == app.Gauge {
+		procValGauge, err := strconv.ParseFloat(procValStr, 64)
+		if err != nil {
+			status, logMessage = http.StatusBadRequest, "failed to get gauge from value after update"
+			return
+		}
+		mOut.Value = &procValGauge
+	} else if m.MType == app.Counter {
+		procValCounter, err := strconv.ParseInt(procValStr, 10, 64)
+		if err != nil {
+			status, logMessage = http.StatusBadRequest, "failed to get gauge from value after update"
+			return
+		}
+		mOut.Delta = &procValCounter
+	}
 
 	// Не будем доставать из хранилища и отдавать результат, отдадим полученную структуру
-	response, err = json.Marshal(m)
+	response, err = json.Marshal(mOut)
 	if err != nil {
 		status, logMessage = http.StatusBadRequest, "failed to marshal json"
 		return

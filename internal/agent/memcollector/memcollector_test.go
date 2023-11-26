@@ -14,26 +14,26 @@ const (
 
 func TestMemCollector(t *testing.T) {
 
-	t.Run("#1 Metrics are collected and PoolCount set working", func(t *testing.T) {
+	t.Run("#1 Metrics are collected and PollCount set working", func(t *testing.T) {
 		memColl := New()
 		memColl.CollectMetrics()
 		metrics := memColl.GetMetrics()
 		assert.Equal(t, metricsCount, len(metrics))
 
-		poolCountMetric := findMetricByID(metrics, "PoolCount")
-		require.NotNil(t, poolCountMetric)
-		require.NotNil(t, poolCountMetric.Delta)
-		assert.Equal(t, 1, *poolCountMetric.Delta)
+		pollCountMetric := findMetricByID(metrics, "PollCount")
+		require.NotNil(t, pollCountMetric)
+		require.NotNil(t, pollCountMetric.Delta)
+		assert.Equal(t, 1, *pollCountMetric.Delta)
 
 		// Вызовем сбор метик разок другой
 		for i := 0; i < collectTestCount; i += 1 {
 			memColl.CollectMetrics()
 		}
 		metrics = memColl.GetMetrics()
-		poolCountMetric = findMetricByID(metrics, "PoolCount")
-		require.NotNil(t, poolCountMetric)
-		require.NotNil(t, poolCountMetric.Delta)
-		assert.Equal(t, collectTestCount+1, *poolCountMetric.Delta)
+		pollCountMetric = findMetricByID(metrics, "PollCount")
+		require.NotNil(t, pollCountMetric)
+		require.NotNil(t, pollCountMetric.Delta)
+		assert.Equal(t, collectTestCount+1, *pollCountMetric.Delta)
 
 	})
 }

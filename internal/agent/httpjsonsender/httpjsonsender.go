@@ -25,12 +25,13 @@ func (j *HTTPJSONSender) sendMetric(metric *app.Metrics) {
 		logger.Log.Error().Err(err).Msg("error due marshal metric before send")
 		return
 	}
+	logger.Log.Debug().Str("json", string(payload)).Msg("trying to send json")
 	req, err := http.NewRequest("POST", j.endpoint, bytes.NewReader(payload))
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("can't create request")
 		return
 	}
-	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("can't do request")
@@ -40,7 +41,7 @@ func (j *HTTPJSONSender) sendMetric(metric *app.Metrics) {
 		_ = resp.Body.Close()
 	}()
 	if resp.StatusCode != 200 {
-		logger.Log.Error().Int("status code", resp.StatusCode).Msg("status code is")
+		logger.Log.Error().Int("status code", resp.StatusCode).Str("endpoint", j.endpoint).Msg("status code is")
 		return
 	}
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/maybecoding/go-metrics.git/internal/server/logger"
 	"strconv"
 )
 
@@ -24,6 +25,7 @@ const (
 )
 
 func (a *App) UpdateMetric(mType string, name string, value string) error {
+	logger.Log.Debug().Str("type", mType).Str("ID", name).Str("value", value).Msg("UpdateMetric")
 	switch mType {
 	case Gauge:
 		value, err := strconv.ParseFloat(value, 64)
@@ -43,7 +45,11 @@ func (a *App) UpdateMetric(mType string, name string, value string) error {
 	return nil
 }
 
-func (a *App) GetMetric(mType string, name string) (string, error) {
+func (a *App) GetMetric(mType string, name string) (res string, e error) {
+	defer func() {
+		logger.Log.Debug().Str("type", mType).Str("ID", name).Str("value", res).Msg("GetMetric")
+	}()
+
 	switch mType {
 	case "gauge":
 		value, err := a.store.GetMetricGauge(name)

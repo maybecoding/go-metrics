@@ -18,12 +18,13 @@ func (c *Controller) metricGetJSON(w http.ResponseWriter, r *http.Request) {
 	)
 	status := http.StatusOK
 	logMessage := ""
+
 	defer func() {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if logMessage != "" {
 			logger.Log.Debug().Err(err).Msg(logMessage)
 		}
-		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(response)
 	}()
 
@@ -43,10 +44,9 @@ func (c *Controller) metricGetJSON(w http.ResponseWriter, r *http.Request) {
 		status, logMessage = http.StatusBadRequest, "isn't set metric name or metric type"
 		return
 	}
-	logger.Log.Debug().Msg(fmt.Sprintf("MType = %s, MID = %s", m.MType, m.ID))
 
 	value, err := c.app.GetMetric(m.MType, m.ID)
-	logger.Log.Debug().Msg(fmt.Sprintf("value = %s", value))
+	logger.Log.Debug().Str("type", m.MType).Str("name", m.ID).Str("value", value).Msg("metric get json")
 
 	if err != nil && errors.Is(err, app.ErrNoMetricValue) {
 		status, logMessage = http.StatusNotFound, "metric isn't found"

@@ -21,10 +21,10 @@ func (c *Controller) GetRouter() chi.Router {
 	r.Use(logger.Handler)
 
 	r.Post("/update/{type}/{name}/{value}", c.metricUpdate)
-	r.Post("/update", c.metricUpdateJSON)
+	r.Post("/update/", c.metricUpdateJSON)
 
+	r.Post("/value/", c.metricGetJSON)
 	r.Get("/value/{type}/{name}", c.metricGet)
-	r.Get("/value", c.metricGetJSON)
 
 	r.Get("/", c.metricGetAll)
 

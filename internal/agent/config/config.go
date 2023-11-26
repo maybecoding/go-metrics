@@ -49,13 +49,13 @@ func New() *Config {
 	}
 
 	// Интервал сборки
-	poolInter := flag.Int("p", 3, "metric pool interval")
-	if envPoolInter := os.Getenv("POLL_INTERVAL"); envPoolInter != "" {
-		envPoolInterInt, err := strconv.Atoi(envPoolInter)
+	pollInter := flag.Int("p", 2, "metric poll interval")
+	if envPollInter := os.Getenv("POLL_INTERVAL"); envPollInter != "" {
+		envPollInterInt, err := strconv.Atoi(envPollInter)
 		if err != nil {
 			log.Fatal("incorrect POLL_INTERVAL env value")
 		}
-		repInter = &envPoolInterInt
+		repInter = &envPollInterInt
 	}
 
 	// Уровень логирования
@@ -74,7 +74,7 @@ func New() *Config {
 	}
 	return &Config{
 		App: App{
-			CollectIntervalSec: *poolInter,
+			CollectIntervalSec: *pollInter,
 			SendIntervalSec:    *repInter,
 		},
 
@@ -82,7 +82,7 @@ func New() *Config {
 			Address:      *servAddr,
 			Method:       "POST",
 			Template:     "http://%s/update/%s/%s/%s",
-			JSONEndpoint: "http://%s/update",
+			JSONEndpoint: "http://%s/update/",
 		},
 
 		Log: Log{

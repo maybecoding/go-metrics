@@ -8,7 +8,7 @@ import (
 
 type MemCollector struct {
 	gaugeMetrics map[string]float64
-	poolCount    int64
+	pollCount    int64
 	memStats     *runtime.MemStats
 }
 
@@ -52,7 +52,7 @@ func (c *MemCollector) CollectMetrics() {
 	c.gaugeMetrics["RandomValue"] = rand.Float64()
 
 	// Собираем метики counter
-	c.poolCount += 1
+	c.pollCount += 1
 
 }
 
@@ -62,6 +62,6 @@ func (c *MemCollector) GetMetrics() []*app.Metrics {
 	for mType, m := range c.gaugeMetrics {
 		metrics = append(metrics, &app.Metrics{MType: app.MetricGauge, ID: mType, Value: &m})
 	}
-	metrics = append(metrics, &app.Metrics{MType: app.MetricCounter, ID: "PoolCount", Delta: &c.poolCount})
+	metrics = append(metrics, &app.Metrics{MType: app.MetricCounter, ID: "PollCount", Delta: &c.pollCount})
 	return metrics
 }
