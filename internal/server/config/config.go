@@ -2,7 +2,7 @@ package config
 
 import (
 	"flag"
-	"github.com/maybecoding/go-metrics.git/internal/server/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
 )
 

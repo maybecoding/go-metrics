@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/logger"
 	"github.com/maybecoding/go-metrics.git/internal/server/model"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 	"strconv"
 )

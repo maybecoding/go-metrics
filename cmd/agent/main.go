@@ -4,8 +4,8 @@ import (
 	aApp "github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/internal/agent/httpjsonsender"
-	"github.com/maybecoding/go-metrics.git/internal/agent/logger"
 	"github.com/maybecoding/go-metrics.git/internal/agent/memcollector"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
 
 func main() {

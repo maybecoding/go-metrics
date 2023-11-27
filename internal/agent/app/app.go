@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/maybecoding/go-metrics.git/internal/agent/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"time"
 )
 

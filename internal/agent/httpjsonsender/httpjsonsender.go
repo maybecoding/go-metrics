@@ -2,10 +2,11 @@ package httpjsonsender
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
-	"github.com/maybecoding/go-metrics.git/internal/agent/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 )
 
@@ -20,18 +21,40 @@ func (j *HTTPJSONSender) Send(metrics []*app.Metrics) {
 }
 
 func (j *HTTPJSONSender) sendMetric(metric *app.Metrics) {
+	// Получаем json для отправки
 	payload, err := json.Marshal(metric)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("error due marshal metric before send")
 		return
 	}
 	logger.Log.Debug().Str("json", string(payload)).Msg("trying to send json")
-	req, err := http.NewRequest("POST", j.endpoint, bytes.NewReader(payload))
+
+	// Создаем сжатый поток
+	buf := bytes.NewBuffer(nil)
+	zw := gzip.NewWriter(buf)
+
+	// И записываем в него данные
+	_, err = zw.Write(payload)
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("can't write into gzip writer")
+		return
+	}
+	err = zw.Close()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("can't close gzip writer")
+		return
+	}
+
+	// Создаем запрос
+	req, err := http.NewRequest("POST", j.endpoint, buf)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("can't create request")
 		return
 	}
+	// Устанавливаем заголовок
 	req.Header.Set("Content-Type", "application/json")
+	// Не забываем указать что это сжатые данные
+	req.Header.Set("Content-Encoding", "gzip")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("can't do request")

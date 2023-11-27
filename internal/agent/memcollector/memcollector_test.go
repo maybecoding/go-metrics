@@ -2,7 +2,7 @@ package memcollector
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
-	"github.com/maybecoding/go-metrics.git/internal/agent/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"

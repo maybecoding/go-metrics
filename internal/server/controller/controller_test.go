@@ -2,8 +2,8 @@ package controller
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/logger"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"

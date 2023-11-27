@@ -3,8 +3,8 @@ package controller
 import (
 	"encoding/json"
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/logger"
 	"github.com/maybecoding/go-metrics.git/internal/server/model"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 	"strconv"
 )
@@ -22,11 +22,18 @@ func (c *Controller) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 			logger.Log.Debug().Err(err).Msg(logMessage)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(status)
 		_, _ = w.Write(response)
 
 	}()
+
+	//b, err := io.ReadAll(r.Body)
+	//if err != nil {
+	//	logger.Log.Error().Err(err).Msg("oh my..")
+	//} else {
+	//	fmt.Println(b)
+	//}
 
 	// Получаем JSON и парсим
 	decoder := json.NewDecoder(r.Body)

@@ -3,7 +3,8 @@ package controller
 import (
 	"github.com/go-chi/chi/v5"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/logger"
+	compress2 "github.com/maybecoding/go-metrics.git/pkg/compress"
+	logger2 "github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 )
 
@@ -18,15 +19,19 @@ func New(app *sapp.App, serverAddress string) *Controller {
 
 func (c *Controller) GetRouter() chi.Router {
 	r := chi.NewRouter()
-	r.Use(logger.Handler)
+	// подключаем логер
+	r.Use(logger2.Handler)
 
+	// Установка значениий
 	r.Post("/update/{type}/{name}/{value}", c.metricUpdate)
-	r.Post("/update/", c.metricUpdateJSON)
+	r.Post("/update/", compress2.HandlerFuncReader(compress2.HandlerFuncWriter(c.metricUpdateJSON, compress2.BestSpeed)))
 
-	r.Post("/value/", c.metricGetJSON)
+	// Получение значениий
 	r.Get("/value/{type}/{name}", c.metricGet)
+	r.Post("/value/", compress2.HandlerFuncReader(compress2.HandlerFuncWriter(c.metricGetJSON, compress2.BestSpeed)))
 
-	r.Get("/", c.metricGetAll)
+	// Отчет по метрикам
+	r.Get("/", compress2.HandlerFuncWriter(c.metricGetAll, compress2.BestSpeed))
 
 	return r
 }
@@ -34,10 +39,10 @@ func (c *Controller) GetRouter() chi.Router {
 func (c *Controller) Start() {
 
 	addr := c.serverAddress
-	logger.Log.Info().Str("address", addr).Msg("Starting server")
+	logger2.Log.Info().Str("address", addr).Msg("Starting server")
 	err := http.ListenAndServe(addr, c.GetRouter())
 
 	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("Failed to start server")
+		logger2.Log.Fatal().Err(err).Msg("Failed to start server")
 	}
 }
