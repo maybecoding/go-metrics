@@ -3,10 +3,12 @@ package app
 import (
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"strconv"
+	"time"
 )
 
 type App struct {
-	store Storage
+	store         Storage
+	backupStorage BackupStorage
 }
 
 type Storage interface {
@@ -18,6 +20,13 @@ type Storage interface {
 
 	GetMetricGaugeAll() []*MetricGauge
 	GetMetricCounterAll() []*MetricCounter
+}
+
+type BackupStorage interface {
+	Save(metrics []*Metric) error
+	Restore() ([]*Metric, error)
+	GetBackupInterval() int64
+	GetIsNeedRestore() bool
 }
 
 const (
@@ -41,6 +50,13 @@ func (a *App) UpdateMetric(mType string, name string, value string) error {
 		a.store.SetMetricCounter(&MetricCounter{Name: name, Value: TypeCounter(value)})
 	default:
 		return ErrMetricTypeIncorrect
+	}
+	if a.backupStorage.GetBackupInterval() == 0 {
+		metrics := a.GetMetricsAll()
+		err := a.backupStorage.Save(metrics)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("error due save metrics in update metric")
+		}
 	}
 	return nil
 }
@@ -76,19 +92,52 @@ func (a *App) GetMetricsAll() []*Metric {
 
 	for _, m := range mtrGauge {
 		name := m.Name
-		value := strconv.FormatInt(int64(m.Value), 10)
+		value := strconv.FormatFloat(float64(m.Value), FmtFloat, -1, 64)
 		metrics = append(metrics, &Metric{Type: Gauge, Name: name, Value: value})
 	}
 
 	for _, m := range mtrCounter {
 		name := m.Name
-		value := strconv.FormatFloat(float64(m.Value), FmtFloat, -1, 64)
-		metrics = append(metrics, &Metric{Type: Gauge, Name: name, Value: value})
+		value := strconv.FormatInt(int64(m.Value), 10)
+		metrics = append(metrics, &Metric{Type: Counter, Name: name, Value: value})
 	}
 
 	return metrics
 }
 
-func New(store Storage) *App {
-	return &App{store: store}
+func (a *App) StartBackupTimer() {
+	interval := a.backupStorage.GetBackupInterval()
+	if interval == 0 {
+		return
+	}
+	for {
+		time.Sleep(time.Second * time.Duration(interval))
+		err := a.backupStorage.Save(a.GetMetricsAll())
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("error due saving metrics")
+		}
+	}
+}
+
+func (a *App) restoreMetrics() {
+	if !a.backupStorage.GetIsNeedRestore() {
+		return
+	}
+	metrics, err := a.backupStorage.Restore()
+	if err != nil {
+		logger.Log.Error().Err(err).Msg("error due metrics restore")
+	}
+	for _, m := range metrics {
+		err = a.UpdateMetric(m.Type, m.Name, m.Value)
+		if err != nil {
+			logger.Log.Error().Err(err).Msg("error due restore metric")
+		}
+	}
+
+}
+
+func New(store Storage, backupStorage BackupStorage) *App {
+	app := &App{store: store, backupStorage: backupStorage}
+	app.restoreMetrics()
+	return app
 }

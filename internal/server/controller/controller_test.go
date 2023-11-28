@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +56,8 @@ func TestController(t *testing.T) {
 	}
 
 	store := smemstorage.NewMemStorage()
-	a := app.New(store)
+	backupStore := backupstorage.NewBackupStorage(10, "", false)
+	a := app.New(store, backupStore)
 	contr := New(a, "")
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()
