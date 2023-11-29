@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
 	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/controller"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"golang.org/x/sync/errgroup"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -24,13 +29,32 @@ func main() {
 	)
 	app := sapp.New(store, backupStorage)
 
-	// Запускаем в приложении механихм бэкапирования
-	go app.StartBackupTimer()
-
 	// Создаем контроллер и вверяем ему приложение
 	contr := controller.New(app, cfg.Server.Address)
 
-	// Запускаем
-	contr.Start()
+	// Контекст, который будет отменен при выходе из приложения Ctrl + C
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+
+	g, gCtx := errgroup.WithContext(ctx)
+
+	// Запускаем в приложении механизм бэкапирования
+	g.Go(func() error {
+		return app.StartBackupTimer(gCtx)
+	})
+
+	// Запускаем сервер
+	g.Go(func() error {
+		return contr.Start()
+	})
+
+	// Запускаем выключатель для сервера
+	g.Go(func() error {
+		return contr.Shutdown(gCtx)
+	})
+
+	// Если вырубили приложение
+	if err := g.Wait(); err != nil {
+		logger.Log.Info().Err(err).Msg("app stopped")
+	}
 
 }

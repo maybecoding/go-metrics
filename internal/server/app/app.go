@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"strconv"
 	"time"
@@ -105,16 +107,27 @@ func (a *App) GetMetricsAll() []*Metric {
 	return metrics
 }
 
-func (a *App) StartBackupTimer() {
+func (a *App) StartBackupTimer(ctx context.Context) error {
 	interval := a.backupStorage.GetBackupInterval()
 	if interval == 0 {
-		return
+		return nil
 	}
 	for {
-		time.Sleep(time.Second * time.Duration(interval))
-		err := a.backupStorage.Save(a.GetMetricsAll())
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due saving metrics")
+		select {
+		case <-time.After(time.Second * time.Duration(interval)):
+			err := a.backupStorage.Save(a.GetMetricsAll())
+			// Эту ошибку не выкидываем, она не критична
+			if err != nil {
+				logger.Log.Error().Err(err).Msg("error due saving metrics")
+			}
+		case <-ctx.Done():
+			logger.Log.Info().Msg("start saving metrics on shutdown")
+			err := a.backupStorage.Save(a.GetMetricsAll())
+			if err != nil {
+				return fmt.Errorf("error due saving metrics %w", err)
+			}
+			logger.Log.Info().Msg("metrics saved")
+			return nil
 		}
 	}
 }

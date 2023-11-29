@@ -1,16 +1,19 @@
 package controller
 
 import (
+	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
 	compress2 "github.com/maybecoding/go-metrics.git/pkg/compress"
-	logger2 "github.com/maybecoding/go-metrics.git/pkg/logger"
+	logger "github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 )
 
 type Controller struct {
 	app           *sapp.App
 	serverAddress string
+	server        *http.Server
 }
 
 func New(app *sapp.App, serverAddress string) *Controller {
@@ -20,7 +23,7 @@ func New(app *sapp.App, serverAddress string) *Controller {
 func (c *Controller) GetRouter() chi.Router {
 	r := chi.NewRouter()
 	// подключаем логер
-	r.Use(logger2.Handler)
+	r.Use(logger.Handler)
 
 	// Установка значениий
 	r.Post("/update/{type}/{name}/{value}", c.metricUpdate)
@@ -36,13 +39,16 @@ func (c *Controller) GetRouter() chi.Router {
 	return r
 }
 
-func (c *Controller) Start() {
-
+func (c *Controller) Start() error {
 	addr := c.serverAddress
-	logger2.Log.Info().Str("address", addr).Msg("Starting server")
-	err := http.ListenAndServe(addr, c.GetRouter())
+	c.server = &http.Server{Addr: addr, Handler: c.GetRouter()}
 
-	if err != nil {
-		logger2.Log.Fatal().Err(err).Msg("Failed to start server")
-	}
+	logger.Log.Info().Str("address", addr).Msg("Starting server")
+	return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServe())
+}
+
+func (c *Controller) Shutdown(ctx context.Context) error {
+	<-ctx.Done()
+	logger.Log.Info().Msg("Ctrl + C command got, shutting down server")
+	return c.server.Shutdown(context.Background())
 }
