@@ -1,8 +1,10 @@
-package controller
+package handlers
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -31,6 +33,8 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 }
 
 func TestController(t *testing.T) {
+
+	logger.Init("debug")
 	tests := []struct {
 		name   string
 		url    string
@@ -52,7 +56,8 @@ func TestController(t *testing.T) {
 	}
 
 	store := smemstorage.NewMemStorage()
-	a := app.New(store)
+	backupStore := backupstorage.NewBackupStorage(10, "", false)
+	a := app.New(store, backupStore)
 	contr := New(a, "")
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()

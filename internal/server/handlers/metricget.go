@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (c *Controller) metricGet(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) metricGet(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	mType := chi.URLParam(r, "type")
 
@@ -20,6 +20,7 @@ func (c *Controller) metricGet(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	w.Write([]byte(value))
+
 	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte(value))
 }

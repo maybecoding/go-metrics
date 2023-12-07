@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"log"
 	"os"
 	"strconv"
@@ -9,19 +10,24 @@ import (
 
 type (
 	Config struct {
-		App
-		Sender
+		App    App
+		Sender Sender
+		Log    Log
 	}
 
 	Sender struct {
-		Address     string
-		Method      string
-		Template    string
-		IntervalSec int
+		Address      string
+		Method       string
+		Template     string
+		JSONEndpoint string
+		IntervalSec  int
 	}
 	App struct {
 		CollectIntervalSec int
 		SendIntervalSec    int
+	}
+	Log struct {
+		Level string
 	}
 )
 
@@ -42,13 +48,24 @@ func New() *Config {
 		repInter = &envRepInterInt
 	}
 
-	poolInter := flag.Int("p", 1, "metric pool interval")
-	if envPoolInter := os.Getenv("POLL_INTERVAL"); envPoolInter != "" {
-		envPoolInterInt, err := strconv.Atoi(envPoolInter)
+	// Интервал сборки
+	pollInter := flag.Int("p", 2, "metric poll interval")
+	if envPollInter := os.Getenv("POLL_INTERVAL"); envPollInter != "" {
+		envPollInterInt, err := strconv.Atoi(envPollInter)
 		if err != nil {
 			log.Fatal("incorrect POLL_INTERVAL env value")
 		}
-		repInter = &envPoolInterInt
+		repInter = &envPollInterInt
+	}
+
+	// Уровень логирования
+	logLevel := flag.String("l", "debug", "Log level eg.: debug, error, fatal")
+	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
+		logLevel = &envLogLevel
+	}
+	flag.Parse()
+	if len(flag.Args()) > 0 {
+		logger.Log.Fatal().Msg("undeclared flags provided")
 	}
 
 	flag.Parse()
@@ -57,14 +74,19 @@ func New() *Config {
 	}
 	return &Config{
 		App: App{
-			CollectIntervalSec: *poolInter,
+			CollectIntervalSec: *pollInter,
 			SendIntervalSec:    *repInter,
 		},
 
 		Sender: Sender{
-			Address:  *servAddr,
-			Method:   "POST",
-			Template: "http://%s/update/%s/%s/%s",
+			Address:      *servAddr,
+			Method:       "POST",
+			Template:     "http://%s/update/%s/%s/%s",
+			JSONEndpoint: "http://%s/update/",
+		},
+
+		Log: Log{
+			Level: *logLevel,
 		},
 	}
 }

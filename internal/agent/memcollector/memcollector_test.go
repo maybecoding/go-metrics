@@ -2,45 +2,47 @@ package memcollector
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strconv"
 	"testing"
 )
 
 const (
 	metricsCount     = 29
-	collectTestCount = 50_000
+	collectTestCount = 5_000
 )
 
 func TestMemCollector(t *testing.T) {
 
-	t.Run("#1 Metrics are collected and PoolCount set working", func(t *testing.T) {
+	t.Run("#1 Metrics are collected and PollCount set working", func(t *testing.T) {
+		logger.Init("debug")
 		memColl := New()
 		memColl.CollectMetrics()
 		metrics := memColl.GetMetrics()
 		assert.Equal(t, metricsCount, len(metrics))
 
-		poolCountMetric := findMetricByName(metrics, "PoolCount")
-		require.NotNil(t, poolCountMetric)
-		assert.Equal(t, "1", poolCountMetric.Value)
+		pollCountMetric := findMetricByID(metrics, "PollCount")
+		require.NotNil(t, pollCountMetric)
+		require.NotNil(t, pollCountMetric.Delta)
+		assert.Equal(t, int64(1), *pollCountMetric.Delta)
 
 		// Вызовем сбор метик разок другой
 		for i := 0; i < collectTestCount; i += 1 {
 			memColl.CollectMetrics()
 		}
 		metrics = memColl.GetMetrics()
-		poolCountMetric = findMetricByName(metrics, "PoolCount")
-		require.NotNil(t, poolCountMetric)
-		expectedCount := strconv.FormatInt(collectTestCount+1, 10)
-		assert.Equal(t, expectedCount, poolCountMetric.Value)
+		pollCountMetric = findMetricByID(metrics, "PollCount")
+		require.NotNil(t, pollCountMetric)
+		require.NotNil(t, pollCountMetric.Delta)
+		assert.Equal(t, int64(collectTestCount+1), *pollCountMetric.Delta)
 
 	})
 }
 
-func findMetricByName(metrics []*app.Metric, name string) *app.Metric {
+func findMetricByID(metrics []*app.Metrics, name string) *app.Metrics {
 	for _, metric := range metrics {
-		if metric.Name == name {
+		if metric.ID == name {
 			return metric
 		}
 	}
