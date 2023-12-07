@@ -5,7 +5,7 @@ import (
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
 	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
-	"github.com/maybecoding/go-metrics.git/internal/server/controller"
+	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
 	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"golang.org/x/sync/errgroup"
@@ -30,7 +30,7 @@ func main() {
 	app := sapp.New(store, backupStorage)
 
 	// Создаем контроллер и вверяем ему приложение
-	contr := controller.New(app, cfg.Server.Address)
+	contr := handlers.New(app, cfg.Server.Address)
 
 	// Контекст, который будет отменен при выходе из приложения Ctrl + C
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

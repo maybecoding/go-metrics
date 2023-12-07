@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func (c *Controller) metricGetJSON(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) metricGetJSON(w http.ResponseWriter, r *http.Request) {
 	var (
 		err      error
 		response []byte

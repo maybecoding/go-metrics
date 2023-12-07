@@ -84,7 +84,7 @@ func (bs *BackupStorage) Restore() ([]*sapp.Metric, error) {
 	return metrics, nil
 }
 
-func (bs *BackupStorage) GetBackupInterval() int64 {
+func (bs *BackupStorage) BackupInterval() int64 {
 	return bs.interval
 }
 

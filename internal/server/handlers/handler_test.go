@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/server/app"

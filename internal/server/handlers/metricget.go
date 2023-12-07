@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (c *Controller) metricGet(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) metricGet(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 	mType := chi.URLParam(r, "type")
 

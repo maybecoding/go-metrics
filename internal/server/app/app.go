@@ -27,7 +27,7 @@ type Storage interface {
 type BackupStorage interface {
 	Save(metrics []*Metric) error
 	Restore() ([]*Metric, error)
-	GetBackupInterval() int64
+	BackupInterval() int64
 	GetIsNeedRestore() bool
 }
 
@@ -53,7 +53,7 @@ func (a *App) UpdateMetric(mType string, name string, value string) error {
 	default:
 		return ErrMetricTypeIncorrect
 	}
-	if a.backupStorage.GetBackupInterval() == 0 {
+	if a.backupStorage.BackupInterval() == 0 {
 		metrics := a.GetMetricsAll()
 		err := a.backupStorage.Save(metrics)
 		if err != nil {
@@ -108,7 +108,7 @@ func (a *App) GetMetricsAll() []*Metric {
 }
 
 func (a *App) StartBackupTimer(ctx context.Context) error {
-	interval := a.backupStorage.GetBackupInterval()
+	interval := a.backupStorage.BackupInterval()
 	if interval == 0 {
 		return nil
 	}

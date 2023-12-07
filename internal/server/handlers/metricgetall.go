@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (c *Controller) metricGetAll(w http.ResponseWriter, r *http.Request) {
+func (c *Handler) metricGetAll(w http.ResponseWriter, r *http.Request) {
 	mtr := c.app.GetMetricsAll()
 
 	w.Header().Set("Content-Type", "text/html")
