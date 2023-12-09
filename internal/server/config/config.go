@@ -46,7 +46,7 @@ func NewConfig() *Config {
 		logLevel = &envLogLevel
 	}
 	// storeInterval
-	storeIntervalSec := flag.Int64("i", 10, "metric backup interval in sec. Default 300 sec")
+	storeIntervalSec := flag.Int64("i", 300, "metric backup interval in sec. Default 300 sec")
 	if envStoreIntervalSec := os.Getenv("STORE_INTERVAL"); envStoreIntervalSec != "" {
 		parsed, err := strconv.ParseInt(envStoreIntervalSec, 10, 64)
 		if err != nil {

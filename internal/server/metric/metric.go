@@ -24,9 +24,9 @@ const (
 )
 
 var (
-	ErrMetricTypeIncorrect  = errors.New("metric type incorrect")
-	ErrMetricValueIncorrect = errors.New("metric value incorrect")
-	ErrNoMetricValue        = errors.New("no metric value")
+	ErrMetricTypeIncorrect = errors.New("metric type incorrect")
+	//ErrMetricValueIncorrect = errors.New("metric value incorrect")
+	ErrNoMetricValue = errors.New("no metric value")
 )
 
 type Store interface {
@@ -50,8 +50,10 @@ func (ms *Metric) Set(m *Metrics) error {
 	}
 
 	if m.MType == Gauge {
+		m.Delta = nil
 		lg = lg.Float64("Value", *m.Value)
 	} else {
+		m.Value = nil
 		lg = lg.Int64("Value", *m.Delta)
 	}
 	lg.Msg("UpdateMetric")
