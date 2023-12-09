@@ -2,18 +2,22 @@ package handlers
 
 import (
 	"errors"
-	"github.com/go-chi/chi/v5"
-	"github.com/maybecoding/go-metrics.git/internal/server/app"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/maybecoding/go-metrics.git/internal/server/metric"
 )
 
 func (c *Handler) metricGet(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
-	mType := chi.URLParam(r, "type")
 
-	value, err := c.app.GetMetric(mType, name)
+	m := &metric.Metrics{
+		ID:    chi.URLParam(r, "name"),
+		MType: chi.URLParam(r, "type"),
+	}
+	err := c.metric.Get(m)
 	if err != nil {
-		if errors.Is(err, app.ErrNoMetricValue) {
+		if errors.Is(err, metric.ErrNoMetricValue) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
@@ -22,5 +26,12 @@ func (c *Handler) metricGet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(value))
+	res := ""
+	if m.MType == metric.Gauge {
+		res = strconv.FormatFloat(*m.Value, FmtFloat, -1, 64)
+	} else if m.MType == metric.Counter {
+		res = strconv.FormatInt(*m.Delta, 10)
+	}
+	_, _ = w.Write([]byte(res))
+
 }

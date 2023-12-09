@@ -40,7 +40,7 @@ func HandlerFuncWriter(handlerFn http.HandlerFunc, compLevel ...int) http.Handle
 
 			gzipLevel, ok := gzipLevels[level]
 			if !ok {
-				logger.Log.Error().Int("app compression level", level).Msg("gzip compression level can't be identify by mapping, using default")
+				logger.Log.Error().Int("metric compression level", level).Msg("gzip compression level can't be identify by mapping, using default")
 				level = gzipLevels[DefaultCompression]
 			}
 			cw, err := gzip.NewWriterLevel(w, gzipLevel)

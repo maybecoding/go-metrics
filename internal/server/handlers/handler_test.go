@@ -1,16 +1,16 @@
 package handlers
 
 import (
-	"github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
-	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
-	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricmemstorage"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type want struct {
@@ -55,9 +55,9 @@ func TestController(t *testing.T) {
 		{name: "#7 Counter get", url: "/value/counter/TestTestTestTestTest", method: "GET", want: want{code: 200, getResult: "312323"}},
 	}
 
-	store := smemstorage.NewMemStorage()
-	backupStore := backupstorage.NewBackupStorage(10, "", false)
-	a := app.New(store, backupStore)
+	dumper := metricmemstorage.NewDumper("")
+	store := metricmemstorage.NewMemStorage(dumper, 10, false)
+	a := metric.New(store)
 	contr := New(a, "")
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()

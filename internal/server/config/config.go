@@ -12,6 +12,7 @@ type (
 		Server        Server
 		Log           Log
 		BackupStorage BackupStorage
+		Database      Database
 	}
 
 	Server struct {
@@ -27,6 +28,10 @@ type (
 		Path          string
 		IsRestoreOnUp bool
 	}
+
+	Database struct {
+		ConnStr string
+	}
 )
 
 func NewConfig() *Config {
@@ -41,7 +46,7 @@ func NewConfig() *Config {
 		logLevel = &envLogLevel
 	}
 	// storeInterval
-	storeIntervalSec := flag.Int64("i", 300, "Metric backup interval in sec. Default 300 sec")
+	storeIntervalSec := flag.Int64("i", 10, "metric backup interval in sec. Default 300 sec")
 	if envStoreIntervalSec := os.Getenv("STORE_INTERVAL"); envStoreIntervalSec != "" {
 		parsed, err := strconv.ParseInt(envStoreIntervalSec, 10, 64)
 		if err != nil {
@@ -51,7 +56,7 @@ func NewConfig() *Config {
 	}
 
 	// fileStoragePath
-	fileStoragePath := flag.String("f", "/tmp/metrics-db.json", "Storage file path")
+	fileStoragePath := flag.String("f", "/tmp/metric-db.json", "Storage file path")
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
 		fileStoragePath = &envFileStoragePath
 	}
@@ -66,6 +71,12 @@ func NewConfig() *Config {
 		isRestoreOnUp = &envIsRestoreOnUpBool
 	}
 
+	// databaseConnStr
+	databaseConnStr := flag.String("d", "", "postgres database connection string, if empty - using")
+	if envDatabaseConnStr := os.Getenv("DATABASE_DSN"); envDatabaseConnStr != "" {
+		databaseConnStr = &envDatabaseConnStr
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Log.Fatal().Msg("undeclared flags provided")
@@ -77,6 +88,9 @@ func NewConfig() *Config {
 			Interval:      *storeIntervalSec,
 			Path:          *fileStoragePath,
 			IsRestoreOnUp: *isRestoreOnUp,
+		},
+		Database: Database{
+			ConnStr: *databaseConnStr,
 		},
 	}
 }

@@ -3,21 +3,26 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/metric"
 	"github.com/maybecoding/go-metrics.git/pkg/compress"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	"net/http"
+)
+
+const (
+	FmtFloat = 'f'
 )
 
 type Handler struct {
-	app           *app.App
+	metric        *metric.Metric
 	serverAddress string
 	server        *http.Server
 }
 
-func New(app *app.App, serverAddress string) *Handler {
-	return &Handler{app: app, serverAddress: serverAddress}
+func New(app *metric.Metric, serverAddress string) *Handler {
+	return &Handler{metric: app, serverAddress: serverAddress}
 }
 
 func (c *Handler) GetRouter() chi.Router {
@@ -35,6 +40,9 @@ func (c *Handler) GetRouter() chi.Router {
 
 	// Отчет по метрикам
 	r.Get("/", compress.HandlerFuncWriter(c.metricGetAll, compress.BestSpeed))
+
+	// ping
+	r.Get("/ping", c.ping)
 
 	return r
 }
