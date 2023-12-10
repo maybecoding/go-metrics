@@ -5,6 +5,7 @@ import (
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
 	"strconv"
+	"time"
 )
 
 type (
@@ -30,7 +31,8 @@ type (
 	}
 
 	Database struct {
-		ConnStr string
+		ConnStr        string
+		RetryIntervals []time.Duration
 	}
 )
 
@@ -91,7 +93,8 @@ func NewConfig() *Config {
 			IsRestoreOnUp: *isRestoreOnUp,
 		},
 		Database: Database{
-			ConnStr: *databaseConnStr,
+			ConnStr:        *databaseConnStr,
+			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 		},
 	}
 }

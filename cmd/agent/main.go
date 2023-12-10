@@ -16,7 +16,7 @@ func main() {
 	var memCollect aApp.Collector = memcollector.New()
 	//var httpSend aApp.Sender = httpsender.New(cfg.Sender.Address, cfg.Sender.Method, cfg.Sender.Template)
 	//var jsonSender aApp.Sender = httpjsonsender.New(cfg.Sender.JSONEndpoint, cfg.Sender.Address)
-	var jsonSender aApp.Sender = httpjsonbatchsender.New(cfg.Sender.JSONBatchEndpoint, cfg.Sender.Address)
+	var jsonSender aApp.Sender = httpjsonbatchsender.New(cfg.Sender.JSONBatchEndpoint, cfg.Sender.Address, cfg.Sender.RetryIntervals)
 
 	app := aApp.New(memCollect, jsonSender, cfg.App.SendIntervalSec, cfg.App.CollectIntervalSec)
 

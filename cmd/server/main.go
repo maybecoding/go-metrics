@@ -25,8 +25,12 @@ func main() {
 	var store sapp.Store
 	var memStore *metricmemstorage.MetricMemStorage
 	var app *sapp.Metric
+
+	// Контекст, который будет отменен при выходе из приложения Ctrl + C
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+
 	if cfg.Database.ConnStr != "" {
-		store = dbstorage.New(cfg.Database.ConnStr)
+		store = dbstorage.New(cfg.Database.ConnStr, ctx, cfg.Database.RetryIntervals)
 	} else {
 		dumper := metricmemstorage.NewDumper(cfg.BackupStorage.Path)
 		memStore = metricmemstorage.NewMemStorage(dumper, cfg.BackupStorage.Interval, cfg.BackupStorage.IsRestoreOnUp)
@@ -36,9 +40,6 @@ func main() {
 
 	// Создаем контроллер и вверяем ему приложение
 	contr := handlers.New(app, cfg.Server.Address)
-
-	// Контекст, который будет отменен при выходе из приложения Ctrl + C
-	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
 	g, gCtx := errgroup.WithContext(ctx)
 

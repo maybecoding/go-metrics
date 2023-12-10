@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 type (
@@ -22,6 +23,7 @@ type (
 		JSONEndpoint      string
 		JSONBatchEndpoint string
 		IntervalSec       int
+		RetryIntervals    []time.Duration
 	}
 	App struct {
 		CollectIntervalSec int
@@ -85,6 +87,7 @@ func New() *Config {
 			Template:          "http://%s/update/%s/%s/%s",
 			JSONEndpoint:      "http://%s/update/",
 			JSONBatchEndpoint: "http://%s/updates/",
+			RetryIntervals:    []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 		},
 
 		Log: Log{

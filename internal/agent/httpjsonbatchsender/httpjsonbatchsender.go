@@ -8,10 +8,13 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type HTTPJSONBatchSender struct {
-	endpoint string
+	endpoint       string
+	retryIntervals []time.Duration
 }
 
 func (j *HTTPJSONBatchSender) Send(metrics []*app.Metrics) {
@@ -49,7 +52,18 @@ func (j *HTTPJSONBatchSender) Send(metrics []*app.Metrics) {
 	req.Header.Set("Content-Type", "application/json")
 	// Не забываем указать что это сжатые данные
 	req.Header.Set("Content-Encoding", "gzip")
-	resp, err := http.DefaultClient.Do(req)
+
+	var resp *http.Response
+	for _, ri := range j.retryIntervals {
+		resp, err = http.DefaultClient.Do(req)
+		// TODO найти более подходящий способ понять, что проблема с соединением
+		if err == nil || !strings.Contains(err.Error(), "connect") {
+			break
+		}
+		logger.Log.Debug().Err(err).Dur("duration", ri).Msg("connection error, trying after")
+		time.Sleep(ri)
+	}
+
 	if err != nil {
 		logger.Log.Error().Err(err).Msg("can't do request")
 		return
@@ -63,8 +77,9 @@ func (j *HTTPJSONBatchSender) Send(metrics []*app.Metrics) {
 	}
 }
 
-func New(template, serverAddress string) *HTTPJSONBatchSender {
+func New(template, serverAddress string, retryIntervals []time.Duration) *HTTPJSONBatchSender {
 	return &HTTPJSONBatchSender{
-		endpoint: fmt.Sprintf(template, serverAddress),
+		endpoint:       fmt.Sprintf(template, serverAddress),
+		retryIntervals: retryIntervals,
 	}
 }
