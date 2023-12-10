@@ -119,6 +119,13 @@ func (mem *MetricMemStorage) Ping() error {
 	return errors.New("incorrect ping call for storage in memory")
 }
 
-func (mem *MetricMemStorage) SetAll(_ []*metric.Metrics) error {
-	return errors.New("incorrect setAll call for storage in memory")
+func (mem *MetricMemStorage) SetAll(mts []*metric.Metrics) error {
+	// Чисто для обеспечениия обратной совместимости
+	for _, mt := range mts {
+		err := mem.Set(mt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

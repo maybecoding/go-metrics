@@ -109,7 +109,7 @@ func (ds *DBStorage) SetAll(mts []*metric.Metrics) error {
 		select type, name, value, delta
 		from metric_tmp
 		on conflict(type, name) do update set
-			delta = EXCLUDED.delta,
+			delta = metric.delta + EXCLUDED.delta,
 			value = EXCLUDED.value;
 		drop table if exists metric_tmp;
 	`)
