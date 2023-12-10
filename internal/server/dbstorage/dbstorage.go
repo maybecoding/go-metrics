@@ -91,6 +91,7 @@ func (ds *DBStorage) SetAll(mts []*metric.Metrics) error {
 	_, err = tx.Exec(context.Background(), `
 	drop table if exists metric_tmp;
 	create local temporary table metric_tmp (
+	    id int generated always as identity,
 		type metric_type not null,
 		name varchar(255) not null,
 		value double precision null,
@@ -105,13 +106,29 @@ func (ds *DBStorage) SetAll(mts []*metric.Metrics) error {
 		return fmt.Errorf("error due data loading into tmp table: %w", err)
 	}
 
-	_, err = tx.Exec(context.Background(), `insert into metric (type, name, value, delta)
-		select type, name, value, delta
+	_, err = tx.Exec(context.Background(), `
+	with gauge as (
+		select type, name, value, null::int8 as delta
+			 ,row_number() over (partition by type, name order by id desc) rn
 		from metric_tmp
-		on conflict(type, name) do update set
-			delta = metric.delta + EXCLUDED.delta,
-			value = EXCLUDED.value;
-		drop table if exists metric_tmp;
+		where type = 'gauge'
+	), counter as (
+		select type, name, null, null::double precision as value, sum(delta) as delta
+		from metric_tmp
+		where type = 'counter'
+		group by type, name
+	)
+	insert into metric (type, name, value, delta)
+	select type, name, value, delta
+	from gauge
+	where rn = 1
+	union all
+	select type, name, value, delta
+	from counter
+	on conflict(type, name) do update set
+		delta = metric.delta + EXCLUDED.delta,
+		value = EXCLUDED.value;
+	drop table if exists metric_tmp;
 	`)
 
 	if err != nil {

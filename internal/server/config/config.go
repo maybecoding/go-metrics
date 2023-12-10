@@ -72,6 +72,7 @@ func NewConfig() *Config {
 	}
 
 	// databaseConnStr
+	//databaseConnStr := flag.String("d", "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable", "postgres database connection string, if empty - using")
 	databaseConnStr := flag.String("d", "", "postgres database connection string, if empty - using")
 	if envDatabaseConnStr := os.Getenv("DATABASE_DSN"); envDatabaseConnStr != "" {
 		databaseConnStr = &envDatabaseConnStr
