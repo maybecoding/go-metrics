@@ -158,14 +158,16 @@ func (ds *DBStorage) Get(mt *metric.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.get(mt)
 		var pgErr *pgconn.PgError
-		if err == nil || !errors.Is(err, pgErr) || !pgerrcode.IsConnectionException(pgErr.Code) {
+
+		if err != nil && errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) {
+			select {
+			case <-time.After(ri):
+				logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
+			case <-ds.ctx.Done():
+				return ds.ctx.Err()
+			}
+		} else {
 			return err
-		}
-		select {
-		case <-time.After(ri):
-			logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
-		case <-ds.ctx.Done():
-			return ds.ctx.Err()
 		}
 	}
 	return
@@ -175,19 +177,18 @@ func (ds *DBStorage) Set(mt *metric.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.set(mt)
 
-		if err == nil {
-			return err
-		}
 		var pgErr *pgconn.PgError
-		if !errors.Is(err, pgErr) || !pgerrcode.IsConnectionException(pgErr.Code) {
+		if err != nil && errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) {
+			select {
+			case <-time.After(ri):
+				logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
+			case <-ds.ctx.Done():
+				return ds.ctx.Err()
+			}
+		} else {
 			return err
 		}
-		select {
-		case <-time.After(ri):
-			logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
-		case <-ds.ctx.Done():
-			return ds.ctx.Err()
-		}
+
 	}
 	return
 }
@@ -197,14 +198,15 @@ func (ds *DBStorage) GetAll() (mts []*metric.Metrics, err error) {
 	for _, ri := range ds.retryIntervals {
 		mts, err = ds.getAll()
 		var pgErr *pgconn.PgError
-		if err == nil || !errors.Is(err, pgErr) || !pgerrcode.IsConnectionException(pgErr.Code) {
+		if err != nil && errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) {
+			select {
+			case <-time.After(ri):
+				logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
+			case <-ds.ctx.Done():
+				return nil, ds.ctx.Err()
+			}
+		} else {
 			return mts, err
-		}
-		select {
-		case <-time.After(ri):
-			logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
-		case <-ds.ctx.Done():
-			return nil, ds.ctx.Err()
 		}
 	}
 	return
@@ -214,16 +216,16 @@ func (ds *DBStorage) SetAll(mts []*metric.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.setAll(mts)
 		var pgErr *pgconn.PgError
-		if err == nil || !errors.Is(err, pgErr) || !pgerrcode.IsConnectionException(pgErr.Code) {
+		if err != nil && errors.As(err, &pgErr) && pgerrcode.IsConnectionException(pgErr.Code) {
+			select {
+			case <-time.After(ri):
+				logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
+			case <-ds.ctx.Done():
+				return ds.ctx.Err()
+			}
+		} else {
 			return err
-		}
-		select {
-		case <-time.After(ri):
-			logger.Log.Debug().Err(err).Dur("duration", ri).Msg("try to retry after")
-		case <-ds.ctx.Done():
-			return ds.ctx.Err()
 		}
 	}
 	return
-
 }

@@ -25,4 +25,4 @@ vendor/
 .vscode
 .DS_Store
 
-db/data
+db/data/
