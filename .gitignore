@@ -24,3 +24,5 @@ vendor/
 .idea
 .vscode
 .DS_Store
+
+db/data
