@@ -16,11 +16,12 @@ type (
 	}
 
 	Sender struct {
-		Address      string
-		Method       string
-		Template     string
-		JSONEndpoint string
-		IntervalSec  int
+		Address           string
+		Method            string
+		Template          string
+		JSONEndpoint      string
+		JSONBatchEndpoint string
+		IntervalSec       int
 	}
 	App struct {
 		CollectIntervalSec int
@@ -79,10 +80,11 @@ func New() *Config {
 		},
 
 		Sender: Sender{
-			Address:      *servAddr,
-			Method:       "POST",
-			Template:     "http://%s/update/%s/%s/%s",
-			JSONEndpoint: "http://%s/update/",
+			Address:           *servAddr,
+			Method:            "POST",
+			Template:          "http://%s/update/%s/%s/%s",
+			JSONEndpoint:      "http://%s/update/",
+			JSONBatchEndpoint: "http://%s/updates/",
 		},
 
 		Log: Log{

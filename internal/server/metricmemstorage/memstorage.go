@@ -118,3 +118,7 @@ func (mem *MetricMemStorage) restoreMetrics() {
 func (mem *MetricMemStorage) Ping() error {
 	return errors.New("incorrect ping call for storage in memory")
 }
+
+func (mem *MetricMemStorage) SetAll(_ []*metric.Metrics) error {
+	return errors.New("incorrect setAll call for storage in memory")
+}

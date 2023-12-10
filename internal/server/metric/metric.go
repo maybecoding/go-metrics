@@ -30,36 +30,13 @@ var (
 )
 
 type Store interface {
-	Set(metric *Metrics) error
-	Get(metric *Metrics) error
-
+	Get(*Metrics) error
 	GetAll() ([]*Metrics, error)
+
+	Set(*Metrics) error
+	SetAll([]*Metrics) error
+
 	Ping() error
-}
-
-func (ms *Metric) Set(m *Metrics) error {
-
-	lg := logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID)
-
-	if m.MType != Gauge && m.MType != Counter {
-		return ErrMetricTypeIncorrect
-	}
-
-	if m.MType == Gauge && m.Value == nil || m.MType == Counter && m.Delta == nil {
-		return ErrNoMetricValue
-	}
-
-	if m.MType == Gauge {
-		m.Delta = nil
-		lg = lg.Float64("Value", *m.Value)
-	} else {
-		m.Value = nil
-		lg = lg.Int64("Value", *m.Delta)
-	}
-	lg.Msg("UpdateMetric")
-
-	return ms.store.Set(m)
-
 }
 
 func (ms *Metric) Get(m *Metrics) (e error) {
@@ -88,8 +65,39 @@ func (ms *Metric) Get(m *Metrics) (e error) {
 	return err
 }
 
+func (ms *Metric) Set(m *Metrics) error {
+
+	lg := logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID)
+
+	if m.MType != Gauge && m.MType != Counter {
+		return ErrMetricTypeIncorrect
+	}
+
+	if m.MType == Gauge && m.Value == nil || m.MType == Counter && m.Delta == nil {
+		return ErrNoMetricValue
+	}
+
+	if m.MType == Gauge {
+		m.Delta = nil
+		lg = lg.Float64("Value", *m.Value)
+	} else {
+		m.Value = nil
+		lg = lg.Int64("Value", *m.Delta)
+	}
+	lg.Msg("UpdateMetric")
+
+	return ms.store.Set(m)
+
+}
+
 func (ms *Metric) GetAll() ([]*Metrics, error) {
 	return ms.store.GetAll()
+}
+
+func (ms *Metric) SetAll(mts []*Metrics) error {
+	err := ms.store.SetAll(mts)
+	logger.Log.Err(err).Msg("error due SetAll metrics")
+	return err
 }
 
 func (ms *Metric) Ping() error {

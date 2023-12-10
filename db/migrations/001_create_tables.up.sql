@@ -14,4 +14,10 @@ create table metric (
     constraint PK_metric_type_name primary key (type, name)
 );
 
+alter table metric
+    add constraint CH_metric__gauge_only_value__counter_only_delta check(
+                    type = 'gauge' and value is not null and delta is null or
+                    type = 'counter' and value is null and delta is not null
+        );
+
 commit;

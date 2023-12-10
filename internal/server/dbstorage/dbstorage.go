@@ -28,6 +28,19 @@ func New(connStr string) *DBStorage {
 		conn: conn,
 	}
 }
+func (ds *DBStorage) Get(mt *metric.Metrics) error {
+	row := ds.conn.QueryRow(context.Background(), sqlGetMetric, mt.MType, mt.ID)
+
+	err := row.Scan(&mt.MType, &mt.ID, &mt.Delta, &mt.Value)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return metric.ErrNoMetricValue
+		}
+		return fmt.Errorf("error due get metric: %w", err)
+	}
+
+	return nil
+}
 
 func (ds *DBStorage) Set(mt *metric.Metrics) error {
 	var err error
@@ -43,19 +56,7 @@ func (ds *DBStorage) Set(mt *metric.Metrics) error {
 	}
 	return nil
 }
-func (ds *DBStorage) Get(mt *metric.Metrics) error {
-	row := ds.conn.QueryRow(context.Background(), sqlGetMetric, mt.MType, mt.ID)
 
-	err := row.Scan(&mt.MType, &mt.ID, &mt.Delta, &mt.Value)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return metric.ErrNoMetricValue
-		}
-		return fmt.Errorf("error due get metric: %w", err)
-	}
-
-	return nil
-}
 func (ds *DBStorage) GetAll() ([]*metric.Metrics, error) {
 	rows, err := ds.conn.Query(context.Background(), sqlGetMetricAll)
 	if err != nil {
@@ -72,6 +73,57 @@ func (ds *DBStorage) GetAll() ([]*metric.Metrics, error) {
 	}
 
 	return mts, nil
+}
+func (ds *DBStorage) SetAll(mts []*metric.Metrics) error {
+	cols := []string{"type", "name", "value", "delta"}
+	cpRw := make([][]interface{}, 0, len(mts))
+	for _, mt := range mts {
+		cpRw = append(cpRw, []interface{}{mt.MType, mt.ID, mt.Value, mt.Delta})
+	}
+	tx, err := ds.conn.Begin(context.Background())
+	if err != nil {
+		return fmt.Errorf("error due begin transaction: %w", err)
+	}
+	defer func() {
+		_ = tx.Rollback(context.Background())
+	}()
+
+	_, err = tx.Exec(context.Background(), `
+	drop table if exists metric_tmp;
+	create local temporary table metric_tmp (
+		type metric_type not null,
+		name varchar(255) not null,
+		value double precision null,
+		delta int8 null
+	)`)
+	if err != nil {
+		return fmt.Errorf("error due create tmp table for data loading: %w", err)
+	}
+
+	_, err = tx.CopyFrom(context.Background(), pgx.Identifier{"metric_tmp"}, cols, pgx.CopyFromRows(cpRw))
+	if err != nil {
+		return fmt.Errorf("error due data loading into tmp table: %w", err)
+	}
+
+	_, err = tx.Exec(context.Background(), `insert into metric (type, name, value, delta)
+		select type, name, value, delta
+		from metric_tmp
+		on conflict(type, name) do update set
+			delta = EXCLUDED.delta,
+			value = EXCLUDED.value;
+		drop table if exists metric_tmp;
+	`)
+
+	if err != nil {
+		return fmt.Errorf("error due data loading into metrics: %w", err)
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return fmt.Errorf("error due commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (ds *DBStorage) Ping() error {

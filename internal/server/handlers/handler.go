@@ -34,6 +34,8 @@ func (c *Handler) GetRouter() chi.Router {
 	r.Post("/update/{type}/{name}/{value}", c.metricUpdate)
 	r.Post("/update/", compress.HandlerFuncReader(compress.HandlerFuncWriter(c.metricUpdateJSON, compress.BestSpeed)))
 
+	r.Post("/updates/", compress.HandlerFuncReader(c.metricUpdateAllJSON))
+
 	// Получение значениий
 	r.Get("/value/{type}/{name}", c.metricGet)
 	r.Post("/value/", compress.HandlerFuncReader(compress.HandlerFuncWriter(c.metricGetJSON, compress.BestSpeed)))
