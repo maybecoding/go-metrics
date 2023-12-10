@@ -174,8 +174,12 @@ func (ds *DBStorage) Get(mt *metric.Metrics) (err error) {
 func (ds *DBStorage) Set(mt *metric.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.set(mt)
+
+		if err == nil {
+			return err
+		}
 		var pgErr *pgconn.PgError
-		if err == nil || !errors.Is(err, pgErr) || !pgerrcode.IsConnectionException(pgErr.Code) {
+		if !errors.Is(err, pgErr) || !pgerrcode.IsConnectionException(pgErr.Code) {
 			return err
 		}
 		select {
