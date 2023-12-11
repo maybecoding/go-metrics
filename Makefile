@@ -62,3 +62,12 @@ mg-down:
 	  -path=/migrations \
 	  -database $(DB_URL) \
 	  down -all
+
+.PHONY: test-100k
+test-100k:
+	curl -X POST \
+	  -H "Content-Type: application/json" \
+	  -H "Content-Encoding: gzip" \
+	  --data-binary "@100k.json.gz" \
+	  --compressed \
+	  http://localhost:8080/updates/

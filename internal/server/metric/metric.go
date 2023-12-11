@@ -25,8 +25,7 @@ const (
 
 var (
 	ErrMetricTypeIncorrect = errors.New("metric type incorrect")
-	//ErrMetricValueIncorrect = errors.New("metric value incorrect")
-	ErrNoMetricValue = errors.New("no metric value")
+	ErrNoMetricValue       = errors.New("no metric value")
 )
 
 type Store interface {
@@ -40,8 +39,6 @@ type Store interface {
 }
 
 func (ms *Metric) Get(m *Metrics) (e error) {
-	lg := logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID) //.Str("value", res).Msg("GetMetric")
-
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrNoMetricValue //ErrMetricTypeIncorrect
 	}
@@ -56,18 +53,15 @@ func (ms *Metric) Get(m *Metrics) (e error) {
 	err := ms.store.Get(m)
 
 	if m.MType == Gauge && m.Value != nil {
-		lg = lg.Float64("Value", *m.Value)
+		logger.Log.Debug().Str("type", m.MType).Float64("Value", *m.Value).Msg("GetMetric")
 	} else if m.MType == Counter && m.Delta != nil {
-		lg = lg.Int64("Value", *m.Delta)
+		logger.Log.Debug().Str("type", m.MType).Int64("Value", *m.Delta).Msg("GetMetric")
 	}
-	lg.Msg("GetMetric")
 
 	return err
 }
 
 func (ms *Metric) Set(m *Metrics) error {
-
-	lg := logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID)
 
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrMetricTypeIncorrect
@@ -79,12 +73,11 @@ func (ms *Metric) Set(m *Metrics) error {
 
 	if m.MType == Gauge {
 		m.Delta = nil
-		lg = lg.Float64("Value", *m.Value)
+		logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric")
 	} else {
 		m.Value = nil
-		lg = lg.Int64("Value", *m.Delta)
+		logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID).Int64("Value", *m.Delta).Msg("UpdateMetric")
 	}
-	lg.Msg("UpdateMetric")
 
 	return ms.store.Set(m)
 

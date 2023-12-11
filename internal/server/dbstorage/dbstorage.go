@@ -212,7 +212,19 @@ func (ds *DBStorage) GetAll() (mts []*metric.Metrics, err error) {
 	return
 }
 
+// SetAll ~ 1k/s
 func (ds *DBStorage) SetAll(mts []*metric.Metrics) (err error) {
+	for _, m := range mts {
+		err = ds.set(m)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// SetAllFast ~ 20k/s
+func (ds *DBStorage) SetAllFast(mts []*metric.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.setAll(mts)
 		var pgErr *pgconn.PgError

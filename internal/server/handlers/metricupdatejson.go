@@ -38,14 +38,12 @@ func (c *Handler) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lg := logger.Log.Debug().Str("ID", m.ID).Str("MType", m.MType)
 	if m.Delta != nil {
-		lg.Int64("Delta", *m.Delta)
+		logger.Log.Debug().Str("ID", m.ID).Int64("Delta", *m.Delta).Msg("UpdateMetric JSON")
 	}
 	if m.Value != nil {
-		lg.Float64("Value", *m.Value)
+		logger.Log.Debug().Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric JSON")
 	}
-	lg.Msg("UpdateMetric JSON")
 
 	if err := c.metric.Set(&m); err != nil {
 		status, logMessage = http.StatusBadRequest, "failed to update metric in metric"
