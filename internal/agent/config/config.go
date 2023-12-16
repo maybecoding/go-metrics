@@ -62,13 +62,13 @@ func New() *Config {
 	}
 
 	// Уровень логирования
-	logLevel := flag.String("l", "debug", "Log level eg.: debug, error, fatal")
+	logLevel := flag.String("l", "debug", "lg level eg.: debug, error, fatal")
 	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
 		logLevel = &envLogLevel
 	}
 	flag.Parse()
 	if len(flag.Args()) > 0 {
-		logger.Log.Fatal().Msg("undeclared flags provided")
+		logger.Fatal().Msg("undeclared flags provided")
 	}
 
 	flag.Parse()

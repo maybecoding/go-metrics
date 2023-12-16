@@ -10,6 +10,3 @@ var sqlSetMetricCounter string
 
 //go:embed sql/get_metric.sql
 var sqlGetMetric string
-
-//go:embed sql/get_metric_all.sql
-var sqlGetMetricAll string

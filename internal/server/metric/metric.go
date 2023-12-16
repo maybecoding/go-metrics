@@ -11,10 +11,10 @@ type (
 		//backupStorage BackupStorage
 	}
 	Metrics struct {
-		ID    string   `json:"id"`              // имя метрики
-		MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-		Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-		Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+		ID    string   `json:"id" db:"name"`               // Имя метрики
+		MType string   `json:"type" db:"type"`             // Параметр, принимающий значение gauge или counter
+		Delta *int64   `json:"delta,omitempty" db:"delta"` // Значение метрики в случае передачи counter
+		Value *float64 `json:"value,omitempty" db:"value"` // Значение метрики в случае передачи gauge
 	}
 )
 
@@ -34,8 +34,6 @@ type Store interface {
 
 	Set(*Metrics) error
 	SetAll([]*Metrics) error
-
-	Ping() error
 }
 
 func (ms *Metric) Get(m *Metrics) (e error) {
@@ -53,9 +51,9 @@ func (ms *Metric) Get(m *Metrics) (e error) {
 	err := ms.store.Get(m)
 
 	if m.MType == Gauge && m.Value != nil {
-		logger.Log.Debug().Str("type", m.MType).Float64("Value", *m.Value).Msg("GetMetric")
+		logger.Debug().Str("type", m.MType).Float64("Value", *m.Value).Msg("GetMetric")
 	} else if m.MType == Counter && m.Delta != nil {
-		logger.Log.Debug().Str("type", m.MType).Int64("Value", *m.Delta).Msg("GetMetric")
+		logger.Debug().Str("type", m.MType).Int64("Value", *m.Delta).Msg("GetMetric")
 	}
 
 	return err
@@ -73,10 +71,10 @@ func (ms *Metric) Set(m *Metrics) error {
 
 	if m.MType == Gauge {
 		m.Delta = nil
-		logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric")
+		logger.Debug().Str("type", m.MType).Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric")
 	} else {
 		m.Value = nil
-		logger.Log.Debug().Str("type", m.MType).Str("ID", m.ID).Int64("Value", *m.Delta).Msg("UpdateMetric")
+		logger.Debug().Str("type", m.MType).Str("ID", m.ID).Int64("Value", *m.Delta).Msg("UpdateMetric")
 	}
 
 	return ms.store.Set(m)
@@ -89,12 +87,8 @@ func (ms *Metric) GetAll() ([]*Metrics, error) {
 
 func (ms *Metric) SetAll(mts []*Metrics) error {
 	err := ms.store.SetAll(mts)
-	logger.Log.Err(err).Msg("error due SetAll metrics")
+	logger.Error().Err(err).Msg("error due SetAll metrics")
 	return err
-}
-
-func (ms *Metric) Ping() error {
-	return ms.store.Ping()
 }
 
 func New(store Store) *Metric {

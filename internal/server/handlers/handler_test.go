@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -58,7 +59,8 @@ func TestController(t *testing.T) {
 	dumper := metricmemstorage.NewDumper("")
 	store := metricmemstorage.NewMemStorage(dumper, 10, false)
 	a := metric.New(store)
-	contr := New(a, "")
+	hl := health.New()
+	contr := New(a, "", hl)
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()
 
@@ -66,7 +68,9 @@ func TestController(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			res, get := testRequest(t, ts, tt.method, tt.url)
-			defer res.Body.Close()
+			defer func() {
+				_ = res.Body.Close()
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if tt.method == "GET" {

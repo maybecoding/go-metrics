@@ -43,7 +43,7 @@ func NewConfig() *Config {
 		serverAddress = &envServerAddress
 	}
 	// logLevel
-	logLevel := flag.String("l", "debug", "Log level eg.: debug, error, fatal")
+	logLevel := flag.String("l", "debug", "lg level eg.: debug, error, fatal")
 	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
 		logLevel = &envLogLevel
 	}
@@ -52,7 +52,7 @@ func NewConfig() *Config {
 	if envStoreIntervalSec := os.Getenv("STORE_INTERVAL"); envStoreIntervalSec != "" {
 		parsed, err := strconv.ParseInt(envStoreIntervalSec, 10, 64)
 		if err != nil {
-			logger.Log.Panic().Err(err).Msg("can't parse int from STORE_INTERVAL in env")
+			logger.Fatal().Err(err).Msg("can't parse int from STORE_INTERVAL in env")
 		}
 		storeIntervalSec = &parsed
 	}
@@ -82,7 +82,7 @@ func NewConfig() *Config {
 
 	flag.Parse()
 	if len(flag.Args()) > 0 {
-		logger.Log.Fatal().Msg("undeclared flags provided")
+		logger.Fatal().Msg("undeclared flags provided")
 	}
 	return &Config{
 		Server: Server{Address: *serverAddress},
@@ -97,4 +97,8 @@ func NewConfig() *Config {
 			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 		},
 	}
+}
+
+func (d Database) Use() bool {
+	return d.ConnStr != ""
 }

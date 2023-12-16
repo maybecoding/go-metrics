@@ -18,7 +18,7 @@ func (c *Handler) metricUpdate(w http.ResponseWriter, r *http.Request) {
 		MType: chi.URLParam(r, "type"),
 	}
 
-	logger.Log.Debug().Str("ID", m.ID).Str("MType", m.MType).Str("value", value).Msg("UpdateMetric URL")
+	logger.Debug().Str("ID", m.ID).Str("MType", m.MType).Str("value", value).Msg("UpdateMetric URL")
 
 	if m.MType == metric.Gauge {
 		gValue, err := strconv.ParseFloat(value, 64)

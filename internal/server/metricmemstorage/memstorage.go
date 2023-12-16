@@ -2,7 +2,6 @@ package metricmemstorage
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/server/metric"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
@@ -79,24 +78,24 @@ func (mem *MetricMemStorage) StartBackupTimer(ctx context.Context) error {
 		case <-time.After(time.Second * time.Duration(mem.backupInterval)):
 			ms, err := mem.GetAll()
 			if err != nil {
-				logger.Log.Error().Err(err).Msg("error due get metrics for save")
+				logger.Error().Err(err).Msg("error due get metrics for save")
 			}
 			err = mem.dumper.Save(ms)
 			// Эту ошибку не выкидываем, она не критична
 			if err != nil {
-				logger.Log.Error().Err(err).Msg("error due saving metric")
+				logger.Error().Err(err).Msg("error due saving metric")
 			}
 		case <-ctx.Done():
-			logger.Log.Info().Msg("start saving metric on shutdown")
+			logger.Info().Msg("start saving metric on shutdown")
 			ms, err := mem.GetAll()
 			if err != nil {
-				logger.Log.Error().Err(err).Msg("error due get metrics for save")
+				logger.Error().Err(err).Msg("error due get metrics for save")
 			}
 			err = mem.dumper.Save(ms)
 			if err != nil {
 				return fmt.Errorf("error due saving metric %w", err)
 			}
-			logger.Log.Info().Msg("metric saved")
+			logger.Info().Msg("metric saved")
 			return nil
 		}
 	}
@@ -105,22 +104,18 @@ func (mem *MetricMemStorage) StartBackupTimer(ctx context.Context) error {
 func (mem *MetricMemStorage) restoreMetrics() {
 	metrics, err := mem.dumper.Restore()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("error due metric restore")
+		logger.Error().Err(err).Msg("error due metric restore")
 	}
 	for _, m := range metrics {
 		err = mem.Set(m)
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due restore metric")
+			logger.Error().Err(err).Msg("error due restore metric")
 		}
 	}
 }
 
-func (mem *MetricMemStorage) Ping() error {
-	return errors.New("incorrect ping call for storage in memory")
-}
-
 func (mem *MetricMemStorage) SetAll(mts []*metric.Metrics) error {
-	// Чисто для обеспечениия обратной совместимости
+	// Чисто для обеспечения обратной совместимости
 	for _, mt := range mts {
 		err := mem.Set(mt)
 		if err != nil {

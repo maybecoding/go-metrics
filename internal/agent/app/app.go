@@ -45,7 +45,7 @@ func New(collector Collector, sender Sender, sendIntervalSec int, collectInterva
 func (a App) Start() {
 	// Пока без горутин и мьютексов будем читерить))
 	period := a.SendIntervalSec * a.CollectIntervalSec
-	logger.Log.Info().Int("period", period).Msg("starting collecting and sending metric")
+	logger.Info().Int("period", period).Msg("starting collecting and sending metric")
 
 	// Всегда
 	for {
@@ -54,13 +54,13 @@ func (a App) Start() {
 			// Если самое время запускать сборку метик - запускаем
 			if sec%a.CollectIntervalSec == 0 {
 				a.Collector.CollectMetrics()
-				logger.Log.Debug().Msg("metric collected (I hope)")
+				logger.Debug().Msg("metric collected (I hope)")
 			}
 			// Если наступило время отправлять
 			if sec%a.SendIntervalSec == 0 {
 				metrics := a.Collector.GetMetrics()
 				a.Sender.Send(metrics)
-				logger.Log.Debug().Msg("metric sent (I hope)")
+				logger.Debug().Msg("metric sent (I hope)")
 			}
 		}
 	}

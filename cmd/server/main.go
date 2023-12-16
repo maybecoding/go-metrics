@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,7 +20,7 @@ func main() {
 	// Получаем конфигурацию приложения
 	cfg := config.NewConfig()
 	logger.Init(cfg.Log.Level)
-	logger.Log.Debug().Str("backup file path", cfg.BackupStorage.Path).Msg("initialization")
+	logger.Debug().Str("backup file path", cfg.BackupStorage.Path).Msg("initialization")
 
 	// Если задана база данных
 	var store sapp.Store
@@ -29,8 +30,15 @@ func main() {
 	// Контекст, который будет отменен при выходе из приложения Ctrl + C
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
-	if cfg.Database.ConnStr != "" {
-		store = dbstorage.New(cfg.Database.ConnStr, ctx, cfg.Database.RetryIntervals)
+	// HealthCheck
+	hl := health.New()
+
+	if cfg.Database.Use() {
+		dbStore := dbstorage.New(cfg.Database.ConnStr, ctx, cfg.Database.RetryIntervals)
+		// Просим HealthCheck присмотреть за БД
+		hl.Watch(dbStore.Ping)
+		store = dbStore
+		defer dbStore.ConnectionClose()
 	} else {
 		dumper := metricmemstorage.NewDumper(cfg.BackupStorage.Path)
 		memStore = metricmemstorage.NewMemStorage(dumper, cfg.BackupStorage.Interval, cfg.BackupStorage.IsRestoreOnUp)
@@ -39,7 +47,7 @@ func main() {
 	app = sapp.New(store)
 
 	// Создаем контроллер и вверяем ему приложение
-	contr := handlers.New(app, cfg.Server.Address)
+	contr := handlers.New(app, cfg.Server.Address, hl)
 
 	g, gCtx := errgroup.WithContext(ctx)
 
@@ -62,7 +70,7 @@ func main() {
 
 	// Если вырубили приложение
 	if err := g.Wait(); err != nil {
-		logger.Log.Info().Err(err).Msg("metric stopped")
+		logger.Info().Err(err).Msg("metric stopped")
 	}
 
 }

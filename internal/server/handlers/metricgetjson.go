@@ -21,7 +21,7 @@ func (c *Handler) metricGetJSON(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if logMessage != "" {
-			logger.Log.Debug().Err(err).Msg(logMessage)
+			logger.Debug().Err(err).Msg(logMessage)
 		}
 		_, _ = w.Write(response)
 	}()

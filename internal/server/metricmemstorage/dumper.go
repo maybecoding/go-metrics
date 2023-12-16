@@ -20,7 +20,7 @@ func NewDumper(path string) *Dumper {
 }
 
 func (bs *Dumper) Save(metrics []*metric.Metrics) error {
-	logger.Log.Info().Msg("start metric saving")
+	logger.Info().Msg("start metric saving")
 	if bs.path == "" || len(metrics) == 0 {
 		return nil
 	}
@@ -38,12 +38,12 @@ func (bs *Dumper) Save(metrics []*metric.Metrics) error {
 	for _, m := range metrics {
 		mj, err := json.Marshal(m)
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due marshal metric")
+			logger.Error().Err(err).Msg("error due marshal metric")
 			continue
 		}
 		_, err = outFile.Write(append(mj, '\n'))
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due write metric")
+			logger.Error().Err(err).Msg("error due write metric")
 			continue
 		}
 	}
@@ -52,7 +52,7 @@ func (bs *Dumper) Save(metrics []*metric.Metrics) error {
 }
 
 func (bs *Dumper) Restore() ([]*metric.Metrics, error) {
-	logger.Log.Info().Msg("start metric restoring")
+	logger.Info().Msg("start metric restoring")
 	if bs.path == "" {
 		return nil, nil
 	}
@@ -72,7 +72,7 @@ func (bs *Dumper) Restore() ([]*metric.Metrics, error) {
 		m := metric.Metrics{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due read metric from line")
+			logger.Error().Err(err).Msg("error due read metric from line")
 			continue
 		}
 		metrics = append(metrics, &m)

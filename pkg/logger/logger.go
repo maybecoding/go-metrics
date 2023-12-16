@@ -6,9 +6,9 @@ import (
 	"os"
 )
 
-// Log Общая переменная для логирования будет доступна всему коду
+// lg Общая переменная для логирования будет доступна всему коду
 // Не лучшее решение, но самое простое
-var Log *zerolog.Logger
+var lg *zerolog.Logger
 
 func Init(level string) {
 
@@ -31,5 +31,18 @@ func Init(level string) {
 	}
 	zl.Debug().Str("log level", level).Msg("log initialized")
 
-	Log = &zl
+	lg = &zl
+}
+
+func Fatal() *zerolog.Event {
+	return lg.Fatal()
+}
+func Error() *zerolog.Event {
+	return lg.Error()
+}
+func Info() *zerolog.Event {
+	return lg.Info()
+}
+func Debug() *zerolog.Event {
+	return lg.Debug()
 }

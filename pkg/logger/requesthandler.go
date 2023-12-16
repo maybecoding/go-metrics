@@ -41,7 +41,7 @@ func Handler(h http.Handler) http.Handler {
 		respData := responseData{}
 		wProxy := newProxyResponseWriter(w, &respData)
 		h.ServeHTTP(wProxy, r)
-		Log.Debug().
+		lg.Debug().
 			Str("URI", r.RequestURI).
 			Dur("duration", time.Since(timeStart)).
 			Str("method", r.Method).

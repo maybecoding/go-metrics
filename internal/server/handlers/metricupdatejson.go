@@ -18,7 +18,7 @@ func (c *Handler) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 
 		if err != nil {
-			logger.Log.Debug().Err(err).Msg(logMessage)
+			logger.Debug().Err(err).Msg(logMessage)
 		}
 
 		w.Header().Add("Content-Type", "application/json")
@@ -39,10 +39,10 @@ func (c *Handler) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if m.Delta != nil {
-		logger.Log.Debug().Str("ID", m.ID).Int64("Delta", *m.Delta).Msg("UpdateMetric JSON")
+		logger.Debug().Str("ID", m.ID).Int64("Delta", *m.Delta).Msg("UpdateMetric JSON")
 	}
 	if m.Value != nil {
-		logger.Log.Debug().Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric JSON")
+		logger.Debug().Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric JSON")
 	}
 
 	if err := c.metric.Set(&m); err != nil {

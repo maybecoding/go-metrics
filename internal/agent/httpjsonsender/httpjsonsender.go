@@ -24,10 +24,10 @@ func (j *HTTPJSONSender) sendMetric(metric *app.Metrics) {
 	// Получаем json для отправки
 	payload, err := json.Marshal(metric)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("error due marshal metric before send")
+		logger.Error().Err(err).Msg("error due marshal metric before send")
 		return
 	}
-	logger.Log.Debug().Str("json", string(payload)).Msg("trying to send json")
+	logger.Debug().Str("json", string(payload)).Msg("trying to send json")
 
 	// Создаем сжатый поток
 	buf := bytes.NewBuffer(nil)
@@ -36,19 +36,19 @@ func (j *HTTPJSONSender) sendMetric(metric *app.Metrics) {
 	// И записываем в него данные
 	_, err = zw.Write(payload)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("can't write into gzip writer")
+		logger.Error().Err(err).Msg("can't write into gzip writer")
 		return
 	}
 	err = zw.Close()
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("can't close gzip writer")
+		logger.Error().Err(err).Msg("can't close gzip writer")
 		return
 	}
 
 	// Создаем запрос
 	req, err := http.NewRequest("POST", j.endpoint, buf)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("can't create request")
+		logger.Error().Err(err).Msg("can't create request")
 		return
 	}
 	// Устанавливаем заголовок
@@ -57,14 +57,14 @@ func (j *HTTPJSONSender) sendMetric(metric *app.Metrics) {
 	req.Header.Set("Content-Encoding", "gzip")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logger.Log.Error().Err(err).Msg("can't do request")
+		logger.Error().Err(err).Msg("can't do request")
 		return
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 	if resp.StatusCode != 200 {
-		logger.Log.Error().Int("status code", resp.StatusCode).Str("endpoint", j.endpoint).Msg("status code is")
+		logger.Error().Int("status code", resp.StatusCode).Str("endpoint", j.endpoint).Msg("status code is")
 		return
 	}
 }
