@@ -1,30 +1,26 @@
-package backupstorage
+package metricmemstorage
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
+	"github.com/maybecoding/go-metrics.git/internal/server/metric"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
 )
 
-type BackupStorage struct {
-	interval      int64
-	path          string
-	isRestoreOnUp bool
+type Dumper struct {
+	path string
 }
 
-func NewBackupStorage(interval int64, path string, isRestoreOnUp bool) *BackupStorage {
-	return &BackupStorage{
-		interval:      interval,
-		path:          path,
-		isRestoreOnUp: isRestoreOnUp,
+func NewDumper(path string) *Dumper {
+	return &Dumper{
+		path: path,
 	}
 }
 
-func (bs *BackupStorage) Save(metrics []*sapp.Metric) error {
-	logger.Log.Info().Msg("start metrics saving")
+func (bs *Dumper) Save(metrics []*metric.Metrics) error {
+	logger.Info().Msg("start metric saving")
 	if bs.path == "" || len(metrics) == 0 {
 		return nil
 	}
@@ -39,15 +35,15 @@ func (bs *BackupStorage) Save(metrics []*sapp.Metric) error {
 	}()
 
 	// По каждой метрике выполняем сохранение в файл
-	for _, metric := range metrics {
-		mj, err := json.Marshal(metric)
+	for _, m := range metrics {
+		mj, err := json.Marshal(m)
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due marshal metric")
+			logger.Error().Err(err).Msg("error due marshal metric")
 			continue
 		}
 		_, err = outFile.Write(append(mj, '\n'))
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due write metric")
+			logger.Error().Err(err).Msg("error due write metric")
 			continue
 		}
 	}
@@ -55,8 +51,8 @@ func (bs *BackupStorage) Save(metrics []*sapp.Metric) error {
 	return nil
 }
 
-func (bs *BackupStorage) Restore() ([]*sapp.Metric, error) {
-	logger.Log.Info().Msg("start metrics restoring")
+func (bs *Dumper) Restore() ([]*metric.Metrics, error) {
+	logger.Info().Msg("start metric restoring")
 	if bs.path == "" {
 		return nil, nil
 	}
@@ -69,25 +65,17 @@ func (bs *BackupStorage) Restore() ([]*sapp.Metric, error) {
 		_ = inFile.Close()
 	}()
 
-	metrics := make([]*sapp.Metric, 0)
+	metrics := make([]*metric.Metrics, 0)
 	scanner := bufio.NewScanner(inFile)
 	for scanner.Scan() {
 		data := scanner.Bytes()
-		m := sapp.Metric{}
+		m := metric.Metrics{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
-			logger.Log.Error().Err(err).Msg("error due read metric from line")
+			logger.Error().Err(err).Msg("error due read metric from line")
 			continue
 		}
 		metrics = append(metrics, &m)
 	}
 	return metrics, nil
-}
-
-func (bs *BackupStorage) BackupInterval() int64 {
-	return bs.interval
-}
-
-func (bs *BackupStorage) GetIsNeedRestore() bool {
-	return bs.isRestoreOnUp
 }

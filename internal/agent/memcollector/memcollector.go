@@ -20,7 +20,7 @@ func New() *MemCollector {
 }
 
 func (c *MemCollector) CollectMetrics() {
-	// Собираем тетрики gauge
+	// Собираем метрики gauge
 	runtime.ReadMemStats(c.memStats)
 	c.gaugeMetrics["Alloc"] = float64(c.memStats.Alloc)
 	c.gaugeMetrics["BuckHashSys"] = float64(c.memStats.BuckHashSys)
@@ -59,7 +59,8 @@ func (c *MemCollector) CollectMetrics() {
 func (c *MemCollector) GetMetrics() []*app.Metrics {
 	metrics := make([]*app.Metrics, 0, len(c.gaugeMetrics)+1)
 
-	for mType, m := range c.gaugeMetrics {
+	for mType, mt := range c.gaugeMetrics {
+		m := mt
 		metrics = append(metrics, &app.Metrics{MType: app.MetricGauge, ID: mType, Value: &m})
 	}
 	metrics = append(metrics, &app.Metrics{MType: app.MetricCounter, ID: "PollCount", Delta: &c.pollCount})

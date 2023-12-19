@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
-	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
-	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricmemstorage"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type want struct {
@@ -55,10 +56,11 @@ func TestController(t *testing.T) {
 		{name: "#7 Counter get", url: "/value/counter/TestTestTestTestTest", method: "GET", want: want{code: 200, getResult: "312323"}},
 	}
 
-	store := smemstorage.NewMemStorage()
-	backupStore := backupstorage.NewBackupStorage(10, "", false)
-	a := app.New(store, backupStore)
-	contr := New(a, "")
+	dumper := metricmemstorage.NewDumper("")
+	store := metricmemstorage.NewMemStorage(dumper, 10, false)
+	a := metric.New(store)
+	hl := health.New()
+	contr := New(a, "", hl)
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()
 
@@ -66,7 +68,9 @@ func TestController(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			res, get := testRequest(t, ts, tt.method, tt.url)
-			defer res.Body.Close()
+			defer func() {
+				_ = res.Body.Close()
+			}()
 
 			assert.Equal(t, tt.want.code, res.StatusCode)
 			if tt.method == "GET" {

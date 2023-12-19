@@ -5,6 +5,7 @@ import (
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
 	"strconv"
+	"time"
 )
 
 type (
@@ -12,6 +13,7 @@ type (
 		Server        Server
 		Log           Log
 		BackupStorage BackupStorage
+		Database      Database
 	}
 
 	Server struct {
@@ -27,6 +29,11 @@ type (
 		Path          string
 		IsRestoreOnUp bool
 	}
+
+	Database struct {
+		ConnStr        string
+		RetryIntervals []time.Duration
+	}
 )
 
 func NewConfig() *Config {
@@ -36,22 +43,22 @@ func NewConfig() *Config {
 		serverAddress = &envServerAddress
 	}
 	// logLevel
-	logLevel := flag.String("l", "debug", "Log level eg.: debug, error, fatal")
+	logLevel := flag.String("l", "debug", "lg level eg.: debug, error, fatal")
 	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
 		logLevel = &envLogLevel
 	}
 	// storeInterval
-	storeIntervalSec := flag.Int64("i", 300, "Metric backup interval in sec. Default 300 sec")
+	storeIntervalSec := flag.Int64("i", 300, "metric backup interval in sec. Default 300 sec")
 	if envStoreIntervalSec := os.Getenv("STORE_INTERVAL"); envStoreIntervalSec != "" {
 		parsed, err := strconv.ParseInt(envStoreIntervalSec, 10, 64)
 		if err != nil {
-			logger.Log.Panic().Err(err).Msg("can't parse int from STORE_INTERVAL in env")
+			logger.Fatal().Err(err).Msg("can't parse int from STORE_INTERVAL in env")
 		}
 		storeIntervalSec = &parsed
 	}
 
 	// fileStoragePath
-	fileStoragePath := flag.String("f", "/tmp/metrics-db.json", "Storage file path")
+	fileStoragePath := flag.String("f", "/tmp/metric-db.json", "Storage file path")
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
 		fileStoragePath = &envFileStoragePath
 	}
@@ -66,9 +73,16 @@ func NewConfig() *Config {
 		isRestoreOnUp = &envIsRestoreOnUpBool
 	}
 
+	// databaseConnStr
+	//databaseConnStr := flag.String("d", "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable", "postgres database connection string, if empty - using")
+	databaseConnStr := flag.String("d", "", "postgres database connection string, if empty - using")
+	if envDatabaseConnStr := os.Getenv("DATABASE_DSN"); envDatabaseConnStr != "" {
+		databaseConnStr = &envDatabaseConnStr
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
-		logger.Log.Fatal().Msg("undeclared flags provided")
+		logger.Fatal().Msg("undeclared flags provided")
 	}
 	return &Config{
 		Server: Server{Address: *serverAddress},
@@ -78,5 +92,13 @@ func NewConfig() *Config {
 			Path:          *fileStoragePath,
 			IsRestoreOnUp: *isRestoreOnUp,
 		},
+		Database: Database{
+			ConnStr:        *databaseConnStr,
+			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+		},
 	}
+}
+
+func (d Database) Use() bool {
+	return d.ConnStr != ""
 }

@@ -10,9 +10,9 @@ import (
 func HandlerFuncReader(handlerFn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentEncoding := r.Header.Get("Content-Encoding")
-		logger.Log.Debug().Str("encoding", contentEncoding).Msg("encoding")
+		logger.Debug().Str("encoding", contentEncoding).Msg("encoding")
 		if strings.Contains(contentEncoding, "gzip") {
-			logger.Log.Debug().Msg("body is compressed with gzip")
+			logger.Debug().Msg("body is compressed with gzip")
 			// оборачиваем тело запроса в io.Reader с поддержкой декомпрессии
 			cr, err := gzip.NewReader(r.Body)
 			if err != nil {

@@ -25,7 +25,7 @@ func HandlerFuncWriter(handlerFn http.HandlerFunc, compLevel ...int) http.Handle
 		ow := w
 		// Логика для gzip (можно подключить другие)
 		ae := r.Header.Get("Accept-Encoding")
-		logger.Log.Debug().Str("Accept-Encoding", ae).Msg("on compression")
+		logger.Debug().Str("Accept-Encoding", ae).Msg("on compression")
 		if strings.Contains(ae, "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")
 			// Пытаемся понять какой уровень сжатия
@@ -33,19 +33,19 @@ func HandlerFuncWriter(handlerFn http.HandlerFunc, compLevel ...int) http.Handle
 			if 1 <= len(compLevel) {
 				level = compLevel[0]
 				if level != BestSpeed && level != BestCompression && level != DefaultCompression {
-					logger.Log.Error().Int("level", level).Msg("compression write level is wrong, using default")
+					logger.Error().Int("level", level).Msg("compression write level is wrong, using default")
 					level = DefaultCompression
 				}
 			}
 
 			gzipLevel, ok := gzipLevels[level]
 			if !ok {
-				logger.Log.Error().Int("app compression level", level).Msg("gzip compression level can't be identify by mapping, using default")
+				logger.Error().Int("metric compression level", level).Msg("gzip compression level can't be identify by mapping, using default")
 				level = gzipLevels[DefaultCompression]
 			}
 			cw, err := gzip.NewWriterLevel(w, gzipLevel)
 			if err != nil {
-				logger.Log.Error().Str("compression", "gzip").Int("level", level).Msg("can't set compression level, using default")
+				logger.Error().Str("compression", "gzip").Int("level", level).Msg("can't set compression level, using default")
 				cw = gzip.NewWriter(w)
 			}
 			defer func() {

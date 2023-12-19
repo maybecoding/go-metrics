@@ -2,45 +2,61 @@ package main
 
 import (
 	"context"
-	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
-	"github.com/maybecoding/go-metrics.git/internal/server/backupstorage"
-	"github.com/maybecoding/go-metrics.git/internal/server/config"
-	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
-	"github.com/maybecoding/go-metrics.git/internal/server/memstorage"
-	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	"golang.org/x/sync/errgroup"
+	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/maybecoding/go-metrics.git/internal/server/config"
+	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
+	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
+	sapp "github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricmemstorage"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
 	// Получаем конфигурацию приложения
 	cfg := config.NewConfig()
 	logger.Init(cfg.Log.Level)
-	logger.Log.Debug().Str("backup file path", cfg.BackupStorage.Path).Msg("initialization")
+	logger.Debug().Str("backup file path", cfg.BackupStorage.Path).Msg("initialization")
 
-	// Создаем хранилище и бэкапер
-	var store sapp.Storage = smemstorage.NewMemStorage()
-	var backupStorage sapp.BackupStorage = backupstorage.NewBackupStorage(
-		cfg.BackupStorage.Interval,
-		cfg.BackupStorage.Path,
-		cfg.BackupStorage.IsRestoreOnUp,
-	)
-	app := sapp.New(store, backupStorage)
-
-	// Создаем контроллер и вверяем ему приложение
-	contr := handlers.New(app, cfg.Server.Address)
+	// Если задана база данных
+	var store sapp.Store
+	var memStore *metricmemstorage.MetricMemStorage
+	var app *sapp.Metric
 
 	// Контекст, который будет отменен при выходе из приложения Ctrl + C
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
+	// HealthCheck
+	hl := health.New()
+
+	if cfg.Database.Use() {
+		dbStore := dbstorage.New(cfg.Database.ConnStr, ctx, cfg.Database.RetryIntervals)
+		// Просим HealthCheck присмотреть за БД
+		hl.Watch(dbStore.Ping)
+		store = dbStore
+		defer dbStore.ConnectionClose()
+	} else {
+		dumper := metricmemstorage.NewDumper(cfg.BackupStorage.Path)
+		memStore = metricmemstorage.NewMemStorage(dumper, cfg.BackupStorage.Interval, cfg.BackupStorage.IsRestoreOnUp)
+		store = memStore
+	}
+	app = sapp.New(store)
+
+	// Создаем контроллер и вверяем ему приложение
+	contr := handlers.New(app, cfg.Server.Address, hl)
+
 	g, gCtx := errgroup.WithContext(ctx)
 
 	// Запускаем в приложении механизм бэкапирования
-	g.Go(func() error {
-		return app.StartBackupTimer(gCtx)
-	})
+	if memStore != nil {
+		g.Go(func() error {
+			return memStore.StartBackupTimer(gCtx)
+		})
+	}
 
 	// Запускаем сервер
 	g.Go(func() error {
@@ -54,7 +70,7 @@ func main() {
 
 	// Если вырубили приложение
 	if err := g.Wait(); err != nil {
-		logger.Log.Info().Err(err).Msg("app stopped")
+		logger.Info().Err(err).Msg("metric stopped")
 	}
 
 }

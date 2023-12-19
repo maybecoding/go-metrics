@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 type (
@@ -16,11 +17,13 @@ type (
 	}
 
 	Sender struct {
-		Address      string
-		Method       string
-		Template     string
-		JSONEndpoint string
-		IntervalSec  int
+		Address           string
+		Method            string
+		Template          string
+		JSONEndpoint      string
+		JSONBatchEndpoint string
+		IntervalSec       int
+		RetryIntervals    []time.Duration
 	}
 	App struct {
 		CollectIntervalSec int
@@ -59,13 +62,13 @@ func New() *Config {
 	}
 
 	// Уровень логирования
-	logLevel := flag.String("l", "debug", "Log level eg.: debug, error, fatal")
+	logLevel := flag.String("l", "debug", "lg level eg.: debug, error, fatal")
 	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
 		logLevel = &envLogLevel
 	}
 	flag.Parse()
 	if len(flag.Args()) > 0 {
-		logger.Log.Fatal().Msg("undeclared flags provided")
+		logger.Fatal().Msg("undeclared flags provided")
 	}
 
 	flag.Parse()
@@ -79,10 +82,12 @@ func New() *Config {
 		},
 
 		Sender: Sender{
-			Address:      *servAddr,
-			Method:       "POST",
-			Template:     "http://%s/update/%s/%s/%s",
-			JSONEndpoint: "http://%s/update/",
+			Address:           *servAddr,
+			Method:            "POST",
+			Template:          "http://%s/update/%s/%s/%s",
+			JSONEndpoint:      "http://%s/update/",
+			JSONBatchEndpoint: "http://%s/updates/",
+			RetryIntervals:    []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 		},
 
 		Log: Log{
