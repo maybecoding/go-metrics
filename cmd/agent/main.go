@@ -6,17 +6,19 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/memcollector"
 	"github.com/maybecoding/go-metrics.git/internal/agent/sender"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"time"
 )
 
 func main() {
 	// Config
 	cfg := config.New()
 	logger.Init(cfg.Log.Level)
-
+	cfg.LogDebug()
+	time.Sleep(time.Second)
 	var memCollect aApp.Collector = memcollector.New()
 	//var httpSend aApp.Sender = httpsender.New(cfg.Sender.Address, cfg.Sender.Method, cfg.Sender.Template)
 	//var jsonSender aApp.Sender = httpjsonsender.New(cfg.Sender.JSONEndpoint, cfg.Sender.Address)
-	var jsonSender aApp.Sender = sender.New(cfg.Sender.JSONBatchEndpoint, cfg.Sender.Address, cfg.Sender.RetryIntervals)
+	var jsonSender aApp.Sender = sender.New(cfg.Sender.JSONBatchEndpoint, cfg.Sender.Address, cfg.Sender.RetryIntervals, cfg.Sender.HashKey)
 
 	app := aApp.New(memCollect, jsonSender, cfg.App.SendIntervalSec, cfg.App.CollectIntervalSec)
 

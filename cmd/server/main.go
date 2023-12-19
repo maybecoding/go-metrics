@@ -20,6 +20,7 @@ func main() {
 	// Получаем конфигурацию приложения
 	cfg := config.NewConfig()
 	logger.Init(cfg.Log.Level)
+	cfg.LogDebug()
 	logger.Debug().Str("backup file path", cfg.BackupStorage.Path).Msg("initialization")
 
 	// Если задана база данных
@@ -47,7 +48,7 @@ func main() {
 	app = sapp.New(store)
 
 	// Создаем контроллер и вверяем ему приложение
-	contr := handlers.New(app, cfg.Server.Address, hl)
+	contr := handlers.New(app, cfg.Server.Address, hl, cfg.Server.HashKey)
 
 	g, gCtx := errgroup.WithContext(ctx)
 

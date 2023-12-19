@@ -12,13 +12,14 @@ import (
 type (
 	Config struct {
 		App    App
-		Sender Sender
+		Sender Sender `json:"sender"`
 		Log    Log
 	}
 
 	Sender struct {
-		Address           string
+		Address           string `json:"address"`
 		Method            string
+		HashKey           string
 		Template          string
 		JSONEndpoint      string
 		JSONBatchEndpoint string
@@ -66,6 +67,13 @@ func New() *Config {
 	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
 		logLevel = &envLogLevel
 	}
+
+	// Ключ хеширования
+	key := flag.String("k", "", "hash key")
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		key = &envKey
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Fatal().Msg("undeclared flags provided")
@@ -75,7 +83,7 @@ func New() *Config {
 	if len(flag.Args()) > 0 {
 		log.Fatal("undeclared flags provided")
 	}
-	return &Config{
+	cfg := &Config{
 		App: App{
 			CollectIntervalSec: *pollInter,
 			SendIntervalSec:    *repInter,
@@ -88,10 +96,17 @@ func New() *Config {
 			JSONEndpoint:      "http://%s/update/",
 			JSONBatchEndpoint: "http://%s/updates/",
 			RetryIntervals:    []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			HashKey:           *key,
 		},
 
 		Log: Log{
 			Level: *logLevel,
 		},
 	}
+	//logger.Debug().Str("key", *key).Msg("agent configuration")
+	return cfg
+}
+
+func (cfg *Config) LogDebug() {
+	logger.Debug().Interface("cfg", cfg).Msg("server configuration")
 }

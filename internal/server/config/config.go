@@ -18,6 +18,7 @@ type (
 
 	Server struct {
 		Address string
+		HashKey string
 	}
 
 	Log struct {
@@ -80,12 +81,18 @@ func NewConfig() *Config {
 		databaseConnStr = &envDatabaseConnStr
 	}
 
+	// Ключ хеширования
+	key := flag.String("k", "", "hash key")
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		key = &envKey
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
-	return &Config{
-		Server: Server{Address: *serverAddress},
+	cfg := &Config{
+		Server: Server{Address: *serverAddress, HashKey: *key},
 		Log:    Log{Level: *logLevel},
 		BackupStorage: BackupStorage{
 			Interval:      *storeIntervalSec,
@@ -97,8 +104,14 @@ func NewConfig() *Config {
 			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 		},
 	}
+
+	return cfg
 }
 
 func (d Database) Use() bool {
 	return d.ConnStr != ""
+}
+
+func (cfg *Config) LogDebug() {
+	logger.Debug().Interface("cfg", cfg).Msg("server configuration")
 }

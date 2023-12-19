@@ -87,12 +87,13 @@ func (ms *Metric) GetAll() ([]*Metrics, error) {
 
 func (ms *Metric) SetAll(mts []*Metrics) error {
 	err := ms.store.SetAll(mts)
-	logger.Error().Err(err).Msg("error due SetAll metrics")
+	if err != nil {
+		logger.Error().Err(err).Msg("error due SetAll metrics")
+	}
 	return err
 }
 
 func New(store Store) *Metric {
 	app := &Metric{store: store}
-	//app.restoreMetrics()
 	return app
 }
