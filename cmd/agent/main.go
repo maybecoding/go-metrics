@@ -1,11 +1,14 @@
 package main
 
 import (
-	aApp "github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"context"
+	"github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"github.com/maybecoding/go-metrics.git/internal/agent/collector"
 	"github.com/maybecoding/go-metrics.git/internal/agent/config"
-	"github.com/maybecoding/go-metrics.git/internal/agent/memcollector"
 	"github.com/maybecoding/go-metrics.git/internal/agent/sender"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"os"
+	"os/signal"
 	"time"
 )
 
@@ -14,14 +17,15 @@ func main() {
 	cfg := config.New()
 	logger.Init(cfg.Log.Level)
 	cfg.LogDebug()
+
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+
 	time.Sleep(time.Second)
-	var memCollect aApp.Collector = memcollector.New()
-	//var httpSend aApp.Sender = httpsender.New(cfg.Sender.Address, cfg.Sender.Method, cfg.Sender.Template)
-	//var jsonSender aApp.Sender = httpjsonsender.New(cfg.Sender.JSONEndpoint, cfg.Sender.Address)
-	var jsonSender aApp.Sender = sender.New(cfg.Sender.JSONBatchEndpoint, cfg.Sender.Address, cfg.Sender.RetryIntervals, cfg.Sender.HashKey)
+	var collect app.Collector = collector.New(ctx)
+	var snd app.Sender = sender.New(cfg.Sender.EndpointTemplate, cfg.Sender.Address, cfg.Sender.RetryIntervals, cfg.Sender.HashKey, ctx, cfg.Sender.NumWorkers)
 
-	app := aApp.New(memCollect, jsonSender, cfg.App.SendIntervalSec, cfg.App.CollectIntervalSec)
+	a := app.New(collect, snd, time.Duration(cfg.App.CollectIntervalSec)*time.Second, time.Duration(cfg.App.SendIntervalSec)*time.Second)
 
-	app.Start()
+	a.Start()
 
 }
