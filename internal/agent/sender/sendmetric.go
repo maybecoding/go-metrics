@@ -22,7 +22,7 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 		logger.Error().Err(err).Msg("error due marshal all metrics before send")
 		return
 	}
-	logger.Debug().Str("json", string(rd)).Msg("trying to send json")
+	logger.Debug().Str("metric", string(rd)).Str("endpoint", j.endpoint).Msg("trying to send metric")
 
 	// Создаем сжатый поток
 	buf := bytes.NewBuffer(nil)
@@ -75,6 +75,11 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 
 	if err != nil {
 		logger.Error().Err(err).Msg("can't do request")
+		return
+	}
+
+	if resp == nil {
+		logger.Error().Msg("response is nil")
 		return
 	}
 

@@ -40,6 +40,13 @@ func (j *Sender) SendStart(inpM chan *app.Metrics) {
 
 	for i := 0; i < j.numWorkers; i += 1 {
 		ii := i
+
+		select {
+		case <-j.ctx.Done():
+			return
+		default:
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
