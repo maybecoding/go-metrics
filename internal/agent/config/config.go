@@ -21,7 +21,7 @@ type (
 	}
 
 	Sender struct {
-		Address          string `json:"address"`
+		Server           string `json:"address"`
 		Method           string
 		HashKey          string
 		EndpointTemplate string
@@ -87,10 +87,6 @@ func New() *Config {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
 
-	flag.Parse()
-	if len(flag.Args()) > 0 {
-		log.Fatal("undeclared flags provided")
-	}
 	cfg := &Config{
 		App: App{
 			CollectIntervalSec: *pollInter,
@@ -98,8 +94,7 @@ func New() *Config {
 		},
 
 		Sender: Sender{
-			Address:          *servAddr,
-			Method:           "POST",
+			Server:           *servAddr,
 			EndpointTemplate: "http://%s/update/",
 			RetryIntervals:   []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 			HashKey:          *key,
@@ -115,5 +110,12 @@ func New() *Config {
 }
 
 func (cfg *Config) LogDebug() {
-	logger.Debug().Interface("cfg", cfg).Msg("server configuration")
+	logger.Debug().Interface("cfg", cfg).Interface("args", os.Args).Msg("server configuration")
+}
+
+func (a App) CollectInterval() time.Duration {
+	return time.Duration(a.CollectIntervalSec) * time.Second
+}
+func (a App) SendInterval() time.Duration {
+	return time.Duration(a.SendIntervalSec) * time.Second
 }

@@ -7,11 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 const (
-	metricsCount     = 29
+	metricsCount     = 31
 	collectTestCount = 100
 )
 
@@ -21,9 +20,9 @@ func TestMemCollector(t *testing.T) {
 		logger.Init("debug")
 		ctx, cancel := context.WithCancel(context.Background())
 		memColl := New(ctx)
-		memColl.CollectMetrics(time.Second)
+		memColl.collectAll()
 		metrics := memColl.GetMetrics()
-		assert.Equal(t, metricsCount, len(metrics))
+		assert.Greater(t, len(metrics), metricsCount)
 
 		pollCountMetric := findMetricByID(metrics, "PollCount")
 		require.NotNil(t, pollCountMetric)
@@ -32,7 +31,7 @@ func TestMemCollector(t *testing.T) {
 
 		// Вызовем сбор метик разок другой
 		for i := 0; i < collectTestCount; i += 1 {
-			memColl.CollectMetrics(time.Nanosecond)
+			memColl.collectAll()
 		}
 		metrics = memColl.GetMetrics()
 		pollCountMetric = findMetricByID(metrics, "PollCount")

@@ -9,7 +9,6 @@ import (
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
 	"os/signal"
-	"time"
 )
 
 func main() {
@@ -20,12 +19,11 @@ func main() {
 
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
-	time.Sleep(time.Second)
 	var collect app.Collector = collector.New(ctx)
-	var snd app.Sender = sender.New(cfg.Sender.EndpointTemplate, cfg.Sender.Address, cfg.Sender.RetryIntervals, cfg.Sender.HashKey, ctx, cfg.Sender.NumWorkers)
+	var snd app.Sender = sender.New(ctx, cfg.Sender)
 
-	a := app.New(collect, snd, time.Duration(cfg.App.CollectIntervalSec)*time.Second, time.Duration(cfg.App.SendIntervalSec)*time.Second)
+	a := app.New(collect, snd, cfg.App.CollectInterval(), cfg.App.SendInterval())
 
-	a.Start()
+	a.Run()
 
 }

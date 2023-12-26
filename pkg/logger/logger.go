@@ -14,6 +14,11 @@ func Init(level string) {
 
 	// Пока используем консольный вывод
 	//zl := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	//file, err := os.Create("log" + time.Now().String() + ".log")
+	//if err != nil {
+	//	panic(fmt.Errorf("error due create log file %w", err))
+	//}
+	//zl := log.Output(file)
 	zl := log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	switch level {
 	case "fatal":

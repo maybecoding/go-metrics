@@ -2,22 +2,25 @@ package sender
 
 import (
 	"context"
-	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"sync"
-	"time"
 )
 
 type Sender struct {
-	endpoint       string
-	retryIntervals []time.Duration
-	hashKey        string
-	ctx            context.Context
-	numWorkers     int
+	ctx context.Context
+	cfg config.Sender
 }
 
-func (j *Sender) SendWorker(inpM chan *app.Metrics, id int) {
+func New(ctx context.Context, cfg config.Sender) *Sender {
+	return &Sender{
+		ctx: ctx,
+		cfg: cfg,
+	}
+}
+
+func (j *Sender) Worker(inpM chan *app.Metrics, id int) {
 	logger.Debug().Int("number", id).Msg("Started worker")
 	defer func() {
 		logger.Debug().Int("number", id).Msg("Stopped worker")
@@ -35,10 +38,10 @@ func (j *Sender) SendWorker(inpM chan *app.Metrics, id int) {
 	}
 }
 
-func (j *Sender) SendStart(inpM chan *app.Metrics) {
+func (j *Sender) Run(inpM chan *app.Metrics) {
 	wg := &sync.WaitGroup{}
 
-	for i := 0; i < j.numWorkers; i += 1 {
+	for i := 0; i < j.cfg.NumWorkers; i += 1 {
 		ii := i
 
 		select {
@@ -50,18 +53,8 @@ func (j *Sender) SendStart(inpM chan *app.Metrics) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			j.SendWorker(inpM, ii)
+			j.Worker(inpM, ii)
 		}()
 	}
 	wg.Wait()
-}
-
-func New(template, serverAddress string, retryIntervals []time.Duration, hashKey string, ctx context.Context, numWorkers int) *Sender {
-	return &Sender{
-		endpoint:       fmt.Sprintf(template, serverAddress),
-		retryIntervals: retryIntervals,
-		hashKey:        hashKey,
-		ctx:            ctx,
-		numWorkers:     numWorkers,
-	}
 }

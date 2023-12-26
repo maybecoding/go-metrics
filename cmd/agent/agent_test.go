@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/internal/agent/collector"
+	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/internal/agent/sender"
 	"github.com/maybecoding/go-metrics.git/internal/server/metric"
 	"github.com/maybecoding/go-metrics.git/pkg/compress"
@@ -56,7 +57,14 @@ func TestAgent(t *testing.T) {
 	logger.Debug().Str("test server endpoint", ts.URL).Msg("test server started")
 
 	var collect = collector.New(ctx)
-	var snd app.Sender = sender.New("%s", ts.URL, []time.Duration{2000 * time.Millisecond, 2500 * time.Millisecond}, "", ctx, 2)
+	cfgSender := config.Sender{
+		EndpointTemplate: "%s",
+		Server:           ts.URL,
+		HashKey:          "",
+		RetryIntervals:   []time.Duration{2000 * time.Millisecond, 2500 * time.Millisecond},
+		NumWorkers:       2,
+	}
+	var snd app.Sender = sender.New(ctx, cfgSender)
 
 	a := app.New(collect, snd, time.Duration(1000)*time.Millisecond, time.Duration(1600)*time.Millisecond)
 
@@ -107,7 +115,7 @@ func TestAgent(t *testing.T) {
 
 	}()
 
-	a.Start()
+	a.Run()
 	wg.Wait()
 	//time.Sleep(5 * time.Second)
 }

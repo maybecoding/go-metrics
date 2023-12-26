@@ -3,12 +3,12 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"github.com/maybecoding/go-metrics.git/internal/agent/hasher"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 	"strings"
@@ -22,7 +22,9 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 		logger.Error().Err(err).Msg("error due marshal all metrics before send")
 		return
 	}
-	logger.Debug().Str("metric", string(rd)).Str("endpoint", j.endpoint).Msg("trying to send metric")
+	endpoint := fmt.Sprintf(j.cfg.EndpointTemplate, j.cfg.Server)
+	logger.Debug().Str("endpoint", endpoint).Msg("Endpoint")
+	logger.Debug().Str("metric", string(rd)).Str("endpoint", endpoint).Msg("trying to send metric")
 
 	// Создаем сжатый поток
 	buf := bytes.NewBuffer(nil)
@@ -41,28 +43,17 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 	}
 	rdGz := buf.Bytes()
 
-	// Получаем хеш
-	hsHex := ""
-	if j.hashKey != "" {
-		h := hmac.New(sha256.New, []byte(j.hashKey))
-		h.Write(rdGz)
-		hs := h.Sum(nil)
-		hsHex = hex.EncodeToString(hs)
-	}
 	// Создаем запрос
 	cl := resty.New()
+	cl.OnBeforeRequest(hasher.New(j.cfg.HashKey, sha256.New))
 	var resp *resty.Response
 	req := cl.R().
 		SetBody(rdGz).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip")
 
-	if hsHex != "" {
-		req.SetHeader("HashSHA256", hsHex)
-	}
-
-	for _, ri := range j.retryIntervals {
-		resp, err = req.Post(j.endpoint)
+	for _, ri := range j.cfg.RetryIntervals {
+		resp, err = req.Post(endpoint)
 		if err != nil {
 			logger.Error().Err(err).Msg("error due request")
 		}
@@ -84,7 +75,7 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		logger.Error().Str("status code", resp.Status()).Str("endpoint", j.endpoint).Msg("status code is")
+		logger.Error().Str("status code", resp.Status()).Str("endpoint", endpoint).Msg("status code is")
 		return
 	}
 }

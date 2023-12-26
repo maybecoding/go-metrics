@@ -23,7 +23,7 @@ type Collector interface {
 }
 
 type Sender interface {
-	SendStart(inpM chan *Metrics)
+	Run(inpM chan *Metrics)
 }
 
 type App struct {
@@ -42,7 +42,7 @@ func New(collector Collector, sender Sender, cInterval, sInterval time.Duration)
 	}
 }
 
-func (a App) Start() {
+func (a App) Run() {
 
 	// Запускаем go-рутину, которая собирает метрики с нужным интервалом
 	wg := &sync.WaitGroup{}
@@ -64,7 +64,7 @@ func (a App) Start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		a.Sender.SendStart(chMetrics)
+		a.Sender.Run(chMetrics)
 	}()
 
 	wg.Wait()
