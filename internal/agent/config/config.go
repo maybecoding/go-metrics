@@ -12,23 +12,23 @@ import (
 type (
 	Config struct {
 		App    App
-		Sender Sender
+		Sender Sender `json:"sender"`
 		Log    Log
-	}
-
-	Sender struct {
-		Address           string
-		Method            string
-		Template          string
-		JSONEndpoint      string
-		JSONBatchEndpoint string
-		IntervalSec       int
-		RetryIntervals    []time.Duration
 	}
 	App struct {
 		CollectIntervalSec int
 		SendIntervalSec    int
 	}
+
+	Sender struct {
+		Server           string `json:"address"`
+		Method           string
+		HashKey          string
+		EndpointTemplate string
+		RetryIntervals   []time.Duration
+		NumWorkers       int
+	}
+
 	Log struct {
 		Level string
 	}
@@ -62,36 +62,60 @@ func New() *Config {
 	}
 
 	// Уровень логирования
-	logLevel := flag.String("l", "debug", "lg level eg.: debug, error, fatal")
+	logLevel := flag.String("z", "debug", "lg level eg.: debug, error, fatal")
 	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
 		logLevel = &envLogLevel
 	}
+
+	// Ключ хеширования
+	key := flag.String("k", "", "hash key")
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		key = &envKey
+	}
+
+	// Число одновременных отправок метрик
+	numWorkers := flag.Int("l", 1, "num workers for send metrics")
+	if envNumWorkers := os.Getenv("RATE_LIMIT"); envNumWorkers != "" {
+		num, err := strconv.Atoi(envNumWorkers)
+		if err != nil {
+			numWorkers = &num
+		}
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
 
-	flag.Parse()
-	if len(flag.Args()) > 0 {
-		log.Fatal("undeclared flags provided")
-	}
-	return &Config{
+	cfg := &Config{
 		App: App{
 			CollectIntervalSec: *pollInter,
 			SendIntervalSec:    *repInter,
 		},
 
 		Sender: Sender{
-			Address:           *servAddr,
-			Method:            "POST",
-			Template:          "http://%s/update/%s/%s/%s",
-			JSONEndpoint:      "http://%s/update/",
-			JSONBatchEndpoint: "http://%s/updates/",
-			RetryIntervals:    []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			Server:           *servAddr,
+			EndpointTemplate: "http://%s/update/",
+			RetryIntervals:   []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			HashKey:          *key,
+			NumWorkers:       *numWorkers,
 		},
 
 		Log: Log{
 			Level: *logLevel,
 		},
 	}
+	//logger.Debug().Str("key", *key).Msg("agent configuration")
+	return cfg
+}
+
+func (cfg *Config) LogDebug() {
+	logger.Debug().Interface("cfg", cfg).Interface("args", os.Args).Msg("server configuration")
+}
+
+func (a App) CollectInterval() time.Duration {
+	return time.Duration(a.CollectIntervalSec) * time.Second
+}
+func (a App) SendInterval() time.Duration {
+	return time.Duration(a.SendIntervalSec) * time.Second
 }

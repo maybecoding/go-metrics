@@ -1,15 +1,15 @@
 package app
 
 import (
-	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"sync"
 	"time"
 )
 
 type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	ID    string   `json:"id"`              // Имя метрики
+	MType string   `json:"type"`            // Параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // Значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // Значение метрики в случае передачи gauge
 }
 
 const (
@@ -18,51 +18,56 @@ const (
 )
 
 type Collector interface {
-	CollectMetrics()
-	GetMetrics() []*Metrics
+	CollectMetrics(interval time.Duration)
+	FetchMetrics(outM chan *Metrics, interval time.Duration)
 }
 
 type Sender interface {
-	Send([]*Metrics)
+	Run(inpM chan *Metrics)
 }
 
 type App struct {
 	Collector
 	Sender
-	SendIntervalSec    int
-	CollectIntervalSec int
+	CollectInterval time.Duration
+	SendInterval    time.Duration
 }
 
-func New(collector Collector, sender Sender, sendIntervalSec int, collectIntervalSec int) *App {
+func New(collector Collector, sender Sender, cInterval, sInterval time.Duration) *App {
 	return &App{
-		Collector:          collector,
-		Sender:             sender,
-		CollectIntervalSec: collectIntervalSec,
-		SendIntervalSec:    sendIntervalSec,
+		Collector:       collector,
+		Sender:          sender,
+		CollectInterval: cInterval,
+		SendInterval:    sInterval,
 	}
 }
 
-func (a App) Start() {
-	// Пока без горутин и мьютексов будем читерить))
-	period := a.SendIntervalSec * a.CollectIntervalSec
-	logger.Info().Int("period", period).Msg("starting collecting and sending metric")
+func (a App) Run() {
 
-	// Всегда
-	for {
-		for sec := 1; sec <= period; sec += 1 {
-			time.Sleep(time.Second)
-			// Если самое время запускать сборку метик - запускаем
-			if sec%a.CollectIntervalSec == 0 {
-				a.Collector.CollectMetrics()
-				logger.Debug().Msg("metric collected (I hope)")
-			}
-			// Если наступило время отправлять
-			if sec%a.SendIntervalSec == 0 {
-				metrics := a.Collector.GetMetrics()
-				a.Sender.Send(metrics)
-				logger.Debug().Msg("metric sent (I hope)")
-			}
-		}
-	}
+	// Запускаем go-рутину, которая собирает метрики с нужным интервалом
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		a.Collector.CollectMetrics(a.CollectInterval)
+	}()
+
+	// Запускаем регулярное получение метрик
+	chMetrics := make(chan *Metrics)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		a.Collector.FetchMetrics(chMetrics, a.SendInterval)
+	}()
+
+	// Запускаем воркеров по отправке
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		a.Sender.Run(chMetrics)
+	}()
+
+	wg.Wait()
+	close(chMetrics)
 
 }

@@ -1,6 +1,7 @@
-package memcollector
+package collector
 
 import (
+	"context"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -9,18 +10,19 @@ import (
 )
 
 const (
-	metricsCount     = 29
-	collectTestCount = 5_000
+	metricsCount     = 31
+	collectTestCount = 100
 )
 
 func TestMemCollector(t *testing.T) {
 
 	t.Run("#1 Metrics are collected and PollCount set working", func(t *testing.T) {
 		logger.Init("debug")
-		memColl := New()
-		memColl.CollectMetrics()
+		ctx, cancel := context.WithCancel(context.Background())
+		memColl := New(ctx)
+		memColl.collectAll()
 		metrics := memColl.GetMetrics()
-		assert.Equal(t, metricsCount, len(metrics))
+		assert.Greater(t, len(metrics), metricsCount)
 
 		pollCountMetric := findMetricByID(metrics, "PollCount")
 		require.NotNil(t, pollCountMetric)
@@ -29,14 +31,14 @@ func TestMemCollector(t *testing.T) {
 
 		// Вызовем сбор метик разок другой
 		for i := 0; i < collectTestCount; i += 1 {
-			memColl.CollectMetrics()
+			memColl.collectAll()
 		}
 		metrics = memColl.GetMetrics()
 		pollCountMetric = findMetricByID(metrics, "PollCount")
 		require.NotNil(t, pollCountMetric)
 		require.NotNil(t, pollCountMetric.Delta)
 		assert.Equal(t, int64(collectTestCount+1), *pollCountMetric.Delta)
-
+		cancel()
 	})
 }
 

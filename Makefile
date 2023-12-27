@@ -71,3 +71,15 @@ test-100k:
 	  --data-binary "@100k.json.gz" \
 	  --compressed \
 	  http://localhost:8080/updates/
+
+.PHONY: test-100kh
+test-100kh:
+	curl -X POST \
+ 	  -H "Content-Type: application/json" \
+ 	  -H "Content-Encoding: gzip" \
+ 	  -H "HashSHA256: 1e53a7c6f744b1a520eeee986912db8c7af7dfd68d505ea15bb5e23cf4dbb550" \
+ 	  --data-binary "@100k.json.gz" \
+ 	  --compressed \
+ 	  http://localhost:8080/updates/
+
+

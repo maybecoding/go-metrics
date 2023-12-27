@@ -1,27 +1,42 @@
-package memcollector
+package collector
 
 import (
-	"github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"fmt"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 	"math/rand"
 	"runtime"
+	"sync"
 )
 
-type MemCollector struct {
-	gaugeMetrics map[string]float64
-	pollCount    int64
-	memStats     *runtime.MemStats
+func (c *Collector) collectAll() {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.collectMem()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.collectCPU()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.collectMemStats()
+	}()
+
+	wg.Wait()
 }
 
-func New() *MemCollector {
-	return &MemCollector{
-		gaugeMetrics: make(map[string]float64),
-		memStats:     &runtime.MemStats{},
-	}
-}
-
-func (c *MemCollector) CollectMetrics() {
+func (c *Collector) collectMemStats() {
 	// Собираем метрики gauge
 	runtime.ReadMemStats(c.memStats)
+	c.muGauge.Lock()
 	c.gaugeMetrics["Alloc"] = float64(c.memStats.Alloc)
 	c.gaugeMetrics["BuckHashSys"] = float64(c.memStats.BuckHashSys)
 	c.gaugeMetrics["Frees"] = float64(c.memStats.Frees)
@@ -50,19 +65,35 @@ func (c *MemCollector) CollectMetrics() {
 	c.gaugeMetrics["Sys"] = float64(c.memStats.Sys)
 	c.gaugeMetrics["TotalAlloc"] = float64(c.memStats.TotalAlloc)
 	c.gaugeMetrics["RandomValue"] = rand.Float64()
+	c.muGauge.Unlock()
 
 	// Собираем метики counter
+	c.muCounter.Lock()
 	c.pollCount += 1
-
+	c.muCounter.Unlock()
 }
 
-func (c *MemCollector) GetMetrics() []*app.Metrics {
-	metrics := make([]*app.Metrics, 0, len(c.gaugeMetrics)+1)
-
-	for mType, mt := range c.gaugeMetrics {
-		m := mt
-		metrics = append(metrics, &app.Metrics{MType: app.MetricGauge, ID: mType, Value: &m})
+func (c *Collector) collectMem() {
+	vm, err := mem.VirtualMemory()
+	if err != nil {
+		logger.Error().Err(fmt.Errorf("error due collectPS VM %w", err))
+		return
 	}
-	metrics = append(metrics, &app.Metrics{MType: app.MetricCounter, ID: "PollCount", Delta: &c.pollCount})
-	return metrics
+	c.muGauge.Lock()
+	c.gaugeMetrics["TotalMemory"] = float64(vm.Total)
+	c.gaugeMetrics["FreeMemory"] = float64(vm.Free)
+	c.muGauge.Unlock()
+}
+
+func (c *Collector) collectCPU() {
+	cp, err := cpu.Percent(0, true)
+	if err != nil {
+		logger.Error().Err(fmt.Errorf("error due cpu usage %w", err))
+		return
+	}
+	c.muGauge.Lock()
+	for i, utl := range cp {
+		c.gaugeMetrics[fmt.Sprintf("CPUutilization%d", i)] = utl
+	}
+	c.muGauge.Unlock()
 }

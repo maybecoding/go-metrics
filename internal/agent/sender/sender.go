@@ -1,78 +1,60 @@
 package sender
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/json"
-	"fmt"
-	"github.com/go-resty/resty/v2"
+	"context"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
+	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	"strings"
-	"time"
+	"sync"
 )
 
 type Sender struct {
-	endpoint       string
-	retryIntervals []time.Duration
+	ctx context.Context
+	cfg config.Sender
 }
 
-func (j *Sender) Send(metrics []*app.Metrics) {
-	// Получаем json для отправки
-	payload, err := json.Marshal(metrics)
-	if err != nil {
-		logger.Error().Err(err).Msg("error due marshal all metrics before send")
-		return
-	}
-	logger.Debug().Str("json", string(payload)).Msg("trying to send json")
-
-	// Создаем сжатый поток
-	buf := bytes.NewBuffer(nil)
-	zw := gzip.NewWriter(buf)
-
-	// И записываем в него данные
-	_, err = zw.Write(payload)
-	if err != nil {
-		logger.Error().Err(err).Msg("can't write into gzip writer")
-		return
-	}
-	err = zw.Close()
-	if err != nil {
-		logger.Error().Err(err).Msg("can't close gzip writer")
-		return
-	}
-
-	// Создаем запрос
-	cl := resty.New()
-	var resp *resty.Response
-	for _, ri := range j.retryIntervals {
-		resp, err = cl.R().
-			SetBody(buf).
-			SetHeader("Content-Type", "application/json").
-			SetHeader("Content-Encoding", "gzip").
-			Post(j.endpoint)
-
-		if err == nil || !strings.Contains(err.Error(), "connect") {
-			break
-		}
-		logger.Debug().Err(err).Dur("duration", ri).Msg("connection error, trying after")
-		time.Sleep(ri)
-	}
-
-	if err != nil {
-		logger.Error().Err(err).Msg("can't do request")
-		return
-	}
-
-	if resp.Status() != "200" {
-		logger.Error().Str("status code", resp.Status()).Str("endpoint", j.endpoint).Msg("status code is")
-		return
-	}
-}
-
-func New(template, serverAddress string, retryIntervals []time.Duration) *Sender {
+func New(ctx context.Context, cfg config.Sender) *Sender {
 	return &Sender{
-		endpoint:       fmt.Sprintf(template, serverAddress),
-		retryIntervals: retryIntervals,
+		ctx: ctx,
+		cfg: cfg,
 	}
+}
+
+func (j *Sender) Worker(inpM chan *app.Metrics, id int) {
+	logger.Debug().Int("number", id).Msg("Started worker")
+	defer func() {
+		logger.Debug().Int("number", id).Msg("Stopped worker")
+	}()
+	for {
+		select {
+		case <-j.ctx.Done():
+			return
+		case m, ok := <-inpM:
+			if !ok {
+				return
+			}
+			j.sendMetric(m)
+		}
+	}
+}
+
+func (j *Sender) Run(inpM chan *app.Metrics) {
+	wg := &sync.WaitGroup{}
+
+	for i := 0; i < j.cfg.NumWorkers; i += 1 {
+		ii := i
+
+		select {
+		case <-j.ctx.Done():
+			return
+		default:
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			j.Worker(inpM, ii)
+		}()
+	}
+	wg.Wait()
 }

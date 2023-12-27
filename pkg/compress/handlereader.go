@@ -26,7 +26,7 @@ func HandlerFuncReader(handlerFn http.HandlerFunc) http.HandlerFunc {
 			}()
 		}
 
-		// передаём управление хендлеру
+		// передаём управление хэндлеру
 		handlerFn(w, r)
 	}
 }
