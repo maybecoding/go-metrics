@@ -18,7 +18,7 @@ type MetricMemStorage struct {
 	muCounter      sync.RWMutex
 }
 
-func (mem *MetricMemStorage) Set(m *metric.Metrics) error {
+func (mem *MetricMemStorage) Set(m metric.Metrics) error {
 	if m.MType == metric.Gauge {
 		mem.muGauge.Lock()
 		mem.dataGauge[m.ID] = *m.Value
@@ -129,7 +129,7 @@ func (mem *MetricMemStorage) restoreMetrics() {
 	}
 }
 
-func (mem *MetricMemStorage) SetAll(mts []*metric.Metrics) error {
+func (mem *MetricMemStorage) SetAll(mts []metric.Metrics) error {
 	// Чисто для обеспечения обратной совместимости
 	for _, mt := range mts {
 		err := mem.Set(mt)

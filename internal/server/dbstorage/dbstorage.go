@@ -26,11 +26,6 @@ func New(connStr string, ctx context.Context, retryIntervals []time.Duration) *D
 	if err != nil {
 		logger.Fatal().Err(err).Msg("can't connect to database")
 	}
-	// Запускаем миграции
-	err = runMigrations(connStr)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("can't run migrations")
-	}
 
 	dbs := &DBStorage{
 		conn:           pool,
@@ -53,14 +48,13 @@ func (ds *DBStorage) get(mt *metric.Metrics) error {
 	return nil
 }
 
-func (ds *DBStorage) set(mt *metric.Metrics) error {
+func (ds *DBStorage) set(mt metric.Metrics) error {
 	var err error
 	if mt.MType == metric.Gauge {
-		err = ds.conn.QueryRow(ds.ctx, sqlSetMetricGauge, mt.MType, mt.ID, *mt.Value).
-			Scan(&mt.MType, &mt.ID, &mt.Value)
+		logger.Debug().Str("MType", mt.MType).Str("ID", mt.ID).Float64("Value", *mt.Value).Msg("set value input params")
+		_, err = ds.conn.Exec(ds.ctx, sqlSetMetricGauge, mt.MType, mt.ID, *mt.Value)
 	} else { // Слой выше это проверяет
-		err = ds.conn.QueryRow(ds.ctx, sqlSetMetricCounter, mt.MType, mt.ID, *mt.Delta).
-			Scan(&mt.MType, &mt.ID, &mt.Delta)
+		_, err = ds.conn.Exec(ds.ctx, sqlSetMetricCounter, mt.MType, mt.ID, *mt.Delta)
 	}
 	if err != nil {
 		return fmt.Errorf("error due scan after metric update: %w", err)
@@ -102,7 +96,7 @@ func (ds *DBStorage) Get(mt *metric.Metrics) (err error) {
 	return
 }
 
-func (ds *DBStorage) Set(mt *metric.Metrics) (err error) {
+func (ds *DBStorage) Set(mt metric.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.set(mt)
 
@@ -141,7 +135,7 @@ func (ds *DBStorage) GetAll() (mts []*metric.Metrics, err error) {
 	return
 }
 
-func (ds *DBStorage) SetAll(mts []*metric.Metrics) (err error) {
+func (ds *DBStorage) SetAll(mts []metric.Metrics) (err error) {
 	for _, m := range mts {
 		err = ds.set(m)
 		if err != nil {

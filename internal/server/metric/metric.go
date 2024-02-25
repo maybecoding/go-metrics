@@ -32,8 +32,8 @@ type Store interface {
 	Get(*Metrics) error
 	GetAll() ([]*Metrics, error)
 
-	Set(*Metrics) error
-	SetAll([]*Metrics) error
+	Set(Metrics) error
+	SetAll([]Metrics) error
 }
 
 func (ms *Metric) Get(m *Metrics) (e error) {
@@ -59,7 +59,7 @@ func (ms *Metric) Get(m *Metrics) (e error) {
 	return err
 }
 
-func (ms *Metric) Set(m *Metrics) error {
+func (ms *Metric) Set(m Metrics) error {
 
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrMetricTypeIncorrect
@@ -85,7 +85,7 @@ func (ms *Metric) GetAll() ([]*Metrics, error) {
 	return ms.store.GetAll()
 }
 
-func (ms *Metric) SetAll(mts []*Metrics) error {
+func (ms *Metric) SetAll(mts []Metrics) error {
 	err := ms.store.SetAll(mts)
 	if err != nil {
 		logger.Error().Err(err).Msg("error due SetAll metrics")

@@ -51,7 +51,7 @@ func (bs *Dumper) Save(metrics []*metric.Metrics) error {
 	return nil
 }
 
-func (bs *Dumper) Restore() ([]*metric.Metrics, error) {
+func (bs *Dumper) Restore() ([]metric.Metrics, error) {
 	logger.Info().Msg("start metric restoring")
 	if bs.path == "" {
 		return nil, nil
@@ -65,7 +65,7 @@ func (bs *Dumper) Restore() ([]*metric.Metrics, error) {
 		_ = inFile.Close()
 	}()
 
-	metrics := make([]*metric.Metrics, 0)
+	metrics := make([]metric.Metrics, 0)
 	scanner := bufio.NewScanner(inFile)
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -75,7 +75,7 @@ func (bs *Dumper) Restore() ([]*metric.Metrics, error) {
 			logger.Error().Err(err).Msg("error due read metric from line")
 			continue
 		}
-		metrics = append(metrics, &m)
+		metrics = append(metrics, m)
 	}
 	return metrics, nil
 }

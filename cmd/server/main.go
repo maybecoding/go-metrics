@@ -2,18 +2,17 @@ package main
 
 import (
 	"context"
-	"github.com/maybecoding/go-metrics.git/pkg/health"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/metric"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricmemstorage"
+	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"golang.org/x/sync/errgroup"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -36,6 +35,7 @@ func main() {
 
 	if cfg.Database.Use() {
 		dbStore := dbstorage.New(cfg.Database.ConnStr, ctx, cfg.Database.RetryIntervals)
+		dbstorage.Migrate(cfg.Database.ConnStr)
 		// Просим HealthCheck присмотреть за БД
 		hl.Watch(dbStore.Ping)
 		store = dbStore

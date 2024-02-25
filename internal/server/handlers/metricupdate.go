@@ -13,7 +13,7 @@ func (c *Handler) metricUpdate(w http.ResponseWriter, r *http.Request) {
 
 	value := chi.URLParam(r, "value")
 
-	m := &metric.Metrics{
+	m := metric.Metrics{
 		ID:    chi.URLParam(r, "name"),
 		MType: chi.URLParam(r, "type"),
 	}

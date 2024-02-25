@@ -19,7 +19,7 @@ func (c *Handler) metricUpdateAllJSON(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
-	var mts []*metric.Metrics
+	var mts []metric.Metrics
 	err := decoder.Decode(&mts)
 	if err != nil {
 		status = http.StatusBadRequest
