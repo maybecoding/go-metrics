@@ -1,3 +1,4 @@
+// Package config for configuration structs
 package config
 
 import (
@@ -8,6 +9,7 @@ import (
 	"time"
 )
 
+// Config - root struct
 type (
 	Config struct {
 		Server        Server
@@ -15,28 +17,29 @@ type (
 		BackupStorage BackupStorage
 		Database      Database
 	}
-
+	// Server - struct for server config
 	Server struct {
 		Address string
 		HashKey string
 	}
-
+	// Log - struct for log config
 	Log struct {
 		Level string
 	}
-
+	// BackupStorage - struct for backup functionality config
 	BackupStorage struct {
 		Interval      int64
 		Path          string
 		IsRestoreOnUp bool
 	}
-
+	// Database - struct for db config
 	Database struct {
 		ConnStr        string
 		RetryIntervals []time.Duration
 	}
 )
 
+// NewConfig - constructor for config structures, reads params from flags and env, env overrides flags
 func NewConfig() *Config {
 	// serverAddress
 	serverAddress := flag.String("a", "localhost:8080", "Endpoint HTTP-server address")

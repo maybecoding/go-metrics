@@ -1,73 +1,80 @@
 package config
 
 import (
-	"reflect"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/stretchr/testify/require"
+	"os"
 	"testing"
+	"time"
 )
 
-func TestConfig_LogDebug(t *testing.T) {
-	type fields struct {
-		Server        Server
-		Log           Log
-		BackupStorage BackupStorage
-		Database      Database
-	}
-	tests := []struct {
-		name   string
-		fields fields
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &Config{
-				Server:        tt.fields.Server,
-				Log:           tt.fields.Log,
-				BackupStorage: tt.fields.BackupStorage,
-				Database:      tt.fields.Database,
-			}
-			cfg.LogDebug()
-		})
+func getDefaultConfig() *Config {
+	return &Config{
+		Server: Server{Address: "localhost:8080", HashKey: ""},
+		Log:    Log{Level: "debug"},
+		BackupStorage: BackupStorage{
+			Interval:      300,
+			Path:          "/tmp/metric-db.json",
+			IsRestoreOnUp: true,
+		},
+		Database: Database{
+			ConnStr:        "",
+			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+		},
 	}
 }
 
-func TestDatabase_Use(t *testing.T) {
-	type fields struct {
-		ConnStr        string
-		RetryIntervals []time.Duration
-	}
+func TestConfig(t *testing.T) {
+	logger.Init("debug")
+
 	tests := []struct {
-		name   string
-		fields fields
-		want   bool
+		name     string
+		agrs     []string
+		env      map[string]string
+		mutation func(config *Config)
 	}{
-		// TODO: Add test cases.
+		{"#2 some flags", []string{"main", "-a", ":8080", "-d", "wrong database"}, map[string]string{"DATABASE_DSN": "database"}, func(cfg *Config) {
+			cfg.Server.Address = ":8080"
+			cfg.Database.ConnStr = "database"
+		}},
 	}
+
 	for _, tt := range tests {
+		println("before check")
 		t.Run(tt.name, func(t *testing.T) {
-			d := Database{
-				ConnStr:        tt.fields.ConnStr,
-				RetryIntervals: tt.fields.RetryIntervals,
-			}
-			if got := d.Use(); got != tt.want {
-				t.Errorf("Use() = %v, want %v", got, tt.want)
-			}
+			check(t, tt.agrs, tt.env, tt.mutation)
 		})
+
 	}
 }
+func check(t *testing.T, args []string, env map[string]string, mutation func(config *Config)) {
+	// Задаем аргументы
+	oldArgs := os.Args
+	defer func() {
+		println("defer args")
+		os.Args = oldArgs
+	}()
+	os.Args = args
 
-func TestNewConfig(t *testing.T) {
-	tests := []struct {
-		name string
-		want *Config
-	}{
-		// TODO: Add test cases.
+	// Задаем переменные окружения
+	oldEnv := make(map[string]string)
+	for k, v := range env {
+		oldEnv[k] = os.Getenv(k)
+		err := os.Setenv(k, v)
+		require.NoError(t, err)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewConfig(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	defer func() {
+		println("defer os")
+		for k, v := range oldEnv {
+			err := os.Setenv(k, v)
+			require.NoError(t, err)
+		}
+	}()
+
+	cfg := NewConfig()
+	cfgExpected := getDefaultConfig()
+	mutation(cfgExpected)
+
+	require.Equal(t, cfgExpected, cfg)
+	println("done check")
 }
