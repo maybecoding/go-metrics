@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 )
@@ -19,7 +19,7 @@ func (c *Handler) metricUpdateAllJSON(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
-	var mts []metric.Metrics
+	var mts []metricservice.Metrics
 	err := decoder.Decode(&mts)
 	if err != nil {
 		status = http.StatusBadRequest

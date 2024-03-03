@@ -28,6 +28,8 @@ func (j *Sender) Worker(inpM chan *app.Metrics, id int) {
 	for {
 		select {
 		case <-j.ctx.Done():
+			for range inpM {
+			}
 			return
 		case m, ok := <-inpM:
 			if !ok {
@@ -39,16 +41,18 @@ func (j *Sender) Worker(inpM chan *app.Metrics, id int) {
 }
 
 func (j *Sender) Run(inpM chan *app.Metrics) {
+	// Инициализируем массив с gzip-writer
+
 	wg := &sync.WaitGroup{}
 
 	for i := 0; i < j.cfg.NumWorkers; i += 1 {
 		ii := i
 
-		select {
-		case <-j.ctx.Done():
-			return
-		default:
-		}
+		//select {
+		//case <-j.ctx.Done():
+		//	return
+		//default:
+		//}
 
 		wg.Add(1)
 		go func() {

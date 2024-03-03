@@ -1,4 +1,4 @@
-package metric
+package metricservice
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 )
 
 type (
-	Metric struct {
+	MetricService struct {
 		store Store
 		//backupStorage BackupStorage
 	}
@@ -36,7 +36,7 @@ type Store interface {
 	SetAll([]Metrics) error
 }
 
-func (ms *Metric) Get(m *Metrics) (e error) {
+func (ms *MetricService) Get(m *Metrics) (e error) {
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrNoMetricValue //ErrMetricTypeIncorrect
 	}
@@ -59,7 +59,7 @@ func (ms *Metric) Get(m *Metrics) (e error) {
 	return err
 }
 
-func (ms *Metric) Set(m Metrics) error {
+func (ms *MetricService) Set(m Metrics) error {
 
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrMetricTypeIncorrect
@@ -81,11 +81,11 @@ func (ms *Metric) Set(m Metrics) error {
 
 }
 
-func (ms *Metric) GetAll() ([]*Metrics, error) {
+func (ms *MetricService) GetAll() ([]*Metrics, error) {
 	return ms.store.GetAll()
 }
 
-func (ms *Metric) SetAll(mts []Metrics) error {
+func (ms *MetricService) SetAll(mts []Metrics) error {
 	err := ms.store.SetAll(mts)
 	if err != nil {
 		logger.Error().Err(err).Msg("error due SetAll metrics")
@@ -93,7 +93,7 @@ func (ms *Metric) SetAll(mts []Metrics) error {
 	return err
 }
 
-func New(store Store) *Metric {
-	app := &Metric{store: store}
+func New(store Store) *MetricService {
+	app := &MetricService{store: store}
 	return app
 }

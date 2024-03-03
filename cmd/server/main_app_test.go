@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
-	sapp "github.com/maybecoding/go-metrics.git/internal/server/metric"
+	sapp "github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/require"
 	"math/rand"
@@ -13,11 +13,11 @@ import (
 )
 
 func BenchmarkSetAll(b *testing.B) {
-	logger.Init("error")
+	logger.Init("fatal")
 
 	// Если задана база данных
 	var store sapp.Store
-	var app *sapp.Metric
+	var app *sapp.MetricService
 
 	ctx := context.Background()
 
@@ -28,8 +28,9 @@ func BenchmarkSetAll(b *testing.B) {
 	app = sapp.New(store)
 
 	b.ResetTimer()
+	times := 10_000
 	// Создадим массив из элементов к отправке
-	for i := 0; i < b.N; i++ {
+	for i := 0; i < times; i++ {
 		b.StopTimer()
 		value := rand.Float64()
 		mGauge := sapp.Metrics{

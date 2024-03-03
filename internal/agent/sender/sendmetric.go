@@ -1,8 +1,6 @@
 package sender
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -10,6 +8,7 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/internal/agent/hasher"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/zipper"
 	"net/http"
 	"strings"
 	"time"
@@ -26,23 +25,28 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 	logger.Debug().Str("endpoint", endpoint).Msg("Endpoint")
 	logger.Debug().Str("metric", string(rd)).Str("endpoint", endpoint).Msg("trying to send metric")
 
-	// Создаем сжатый поток
-	buf := bytes.NewBuffer(nil)
-	zw := gzip.NewWriter(buf)
-
-	// И записываем в него данные
-	_, err = zw.Write(rd)
+	// Создаем сжатый поток (до оптимизации по инкременту 18)
+	//buf := bytes.NewBuffer(nil)
+	//zw := gzip.NewWriter(buf)
+	//
+	//// И записываем в него данные
+	//_, err = zw.Write(rd)
+	//if err != nil {
+	//	logger.Error().Err(err).Msg("can't write into gzip writer")
+	//	return
+	//}
+	//err = zw.Close()
+	//if err != nil {
+	//	logger.Error().Err(err).Msg("can't close gzip writer")
+	//	return
+	//}
+	//rdGz := buf.Bytes()
+	// После оптимизации
+	rdGz, err := zipper.ZippedBytes(rd)
 	if err != nil {
-		logger.Error().Err(err).Msg("can't write into gzip writer")
+		logger.Error().Err(err).Msg("sender - sendMetric - zipper.ZippedBytes")
 		return
 	}
-	err = zw.Close()
-	if err != nil {
-		logger.Error().Err(err).Msg("can't close gzip writer")
-		return
-	}
-	rdGz := buf.Bytes()
-
 	// Создаем запрос
 	cl := resty.New()
 	cl.OnBeforeRequest(hasher.New(j.cfg.HashKey, sha256.New))

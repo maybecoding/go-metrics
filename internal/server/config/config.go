@@ -36,6 +36,7 @@ type (
 	Database struct {
 		ConnStr        string
 		RetryIntervals []time.Duration
+		RunMigrations  bool
 	}
 )
 
@@ -105,6 +106,7 @@ func NewConfig() *Config {
 		Database: Database{
 			ConnStr:        *databaseConnStr,
 			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			RunMigrations:  true,
 		},
 	}
 

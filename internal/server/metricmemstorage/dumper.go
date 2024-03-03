@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
 )
@@ -19,7 +19,7 @@ func NewDumper(path string) *Dumper {
 	}
 }
 
-func (bs *Dumper) Save(metrics []*metric.Metrics) error {
+func (bs *Dumper) Save(metrics []*metricservice.Metrics) error {
 	logger.Info().Msg("start metric saving")
 	if bs.path == "" || len(metrics) == 0 {
 		return nil
@@ -51,7 +51,7 @@ func (bs *Dumper) Save(metrics []*metric.Metrics) error {
 	return nil
 }
 
-func (bs *Dumper) Restore() ([]metric.Metrics, error) {
+func (bs *Dumper) Restore() ([]metricservice.Metrics, error) {
 	logger.Info().Msg("start metric restoring")
 	if bs.path == "" {
 		return nil, nil
@@ -65,11 +65,11 @@ func (bs *Dumper) Restore() ([]metric.Metrics, error) {
 		_ = inFile.Close()
 	}()
 
-	metrics := make([]metric.Metrics, 0)
+	metrics := make([]metricservice.Metrics, 0)
 	scanner := bufio.NewScanner(inFile)
 	for scanner.Scan() {
 		data := scanner.Bytes()
-		m := metric.Metrics{}
+		m := metricservice.Metrics{}
 		err = json.Unmarshal(data, &m)
 		if err != nil {
 			logger.Error().Err(err).Msg("error due read metric from line")

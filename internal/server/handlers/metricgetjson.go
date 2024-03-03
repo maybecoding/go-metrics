@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
 
@@ -32,7 +32,7 @@ func (c *Handler) metricGetJSON(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
-	m := metric.Metrics{}
+	m := metricservice.Metrics{}
 	err = decoder.Decode(&m)
 	if err != nil {
 		status, logMessage = http.StatusBadRequest, "failed to parse request JSON"
@@ -41,7 +41,7 @@ func (c *Handler) metricGetJSON(w http.ResponseWriter, r *http.Request) {
 
 	err = c.metric.Get(&m)
 
-	if err != nil && errors.Is(err, metric.ErrNoMetricValue) {
+	if err != nil && errors.Is(err, metricservice.ErrNoMetricValue) {
 		status, logMessage = http.StatusNotFound, "metric isn't found"
 		return
 	}

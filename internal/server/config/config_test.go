@@ -20,6 +20,7 @@ func getDefaultConfig() *Config {
 		Database: Database{
 			ConnStr:        "",
 			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			RunMigrations:  true,
 		},
 	}
 }

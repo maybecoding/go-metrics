@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"sync"
 	"time"
 )
@@ -48,7 +49,11 @@ func (a App) Run() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			logger.Debug().Msg("stopped a.Collector.CollectMetrics")
+		}()
+
 		a.Collector.CollectMetrics(a.CollectInterval)
 	}()
 
@@ -56,18 +61,23 @@ func (a App) Run() {
 	chMetrics := make(chan *Metrics)
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			logger.Debug().Msg("stopped a.Collector.FetchMetrics")
+		}()
 		a.Collector.FetchMetrics(chMetrics, a.SendInterval)
+		close(chMetrics)
 	}()
 
 	// Запускаем воркеров по отправке
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			logger.Debug().Msg("stopped Sender.Run")
+		}()
 		a.Sender.Run(chMetrics)
 	}()
 
 	wg.Wait()
-	close(chMetrics)
-
 }

@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/compress"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
@@ -19,14 +19,14 @@ const (
 )
 
 type Handler struct {
-	metric        *metric.Metric
+	metric        *metricservice.MetricService
 	serverAddress string
 	server        *http.Server
 	health        *health.Health
 	hashKey       string
 }
 
-func New(app *metric.Metric, serverAddress string, hl *health.Health, hk string) *Handler {
+func New(app *metricservice.MetricService, serverAddress string, hl *health.Health, hk string) *Handler {
 	return &Handler{metric: app, serverAddress: serverAddress, health: hl, hashKey: hk}
 }
 
@@ -60,7 +60,7 @@ func (c *Handler) GetRouter() chi.Router {
 	return r
 }
 
-func (c *Handler) Start() error {
+func (c *Handler) Start(_ context.Context) error {
 	addr := c.serverAddress
 	c.server = &http.Server{Addr: addr, Handler: c.GetRouter()}
 
@@ -68,8 +68,7 @@ func (c *Handler) Start() error {
 	return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServe())
 }
 
-func (c *Handler) Shutdown(ctx context.Context) error {
-	<-ctx.Done()
+func (c *Handler) Shutdown(_ context.Context) error {
 	logger.Info().Msg("Ctrl + C command got, shutting down server")
 	return c.server.Shutdown(context.Background())
 }
