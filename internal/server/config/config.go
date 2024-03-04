@@ -19,8 +19,9 @@ type (
 	}
 	// Server - struct for server config
 	Server struct {
-		Address string
-		HashKey string
+		Address      string
+		PprofAddress string
+		HashKey      string
 	}
 	// Log - struct for log config
 	Log struct {
@@ -96,7 +97,7 @@ func NewConfig() *Config {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
 	cfg := &Config{
-		Server: Server{Address: *serverAddress, HashKey: *key},
+		Server: Server{Address: *serverAddress, PprofAddress: "localhost:8090", HashKey: *key},
 		Log:    Log{Level: *logLevel},
 		BackupStorage: BackupStorage{
 			Interval:      *storeIntervalSec,

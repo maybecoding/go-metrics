@@ -2,15 +2,12 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
-	"github.com/maybecoding/go-metrics.git/pkg/hashcheck"
+	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
-	"github.com/maybecoding/go-metrics.git/pkg/compress"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
 
@@ -21,54 +18,38 @@ const (
 type Handler struct {
 	metric        *metricservice.MetricService
 	serverAddress string
+	pprofAddress  string
 	server        *http.Server
 	health        *health.Health
 	hashKey       string
+	pprofServer   *http.Server
 }
 
-func New(app *metricservice.MetricService, serverAddress string, hl *health.Health, hk string) *Handler {
-	return &Handler{metric: app, serverAddress: serverAddress, health: hl, hashKey: hk}
-}
-
-func (c *Handler) GetRouter() chi.Router {
-
-	r := chi.NewRouter()
-
-	// Подключаем логер
-	r.Use(logger.Handler)
-
-	// Подключаем проверку хэшей
-	hashCheck := hashcheck.New(sha256.New, c.hashKey, "HashSHA256")
-	//r.Use(hashCheck.Handler)
-
-	// Установка значений
-	r.Post("/update/{type}/{name}/{value}", c.metricUpdate)
-	r.Post("/update/", compress.HandlerFuncReader(compress.HandlerFuncWriter(c.metricUpdateJSON, compress.BestSpeed)))
-
-	r.Post("/updates/", hashCheck.HandlerFunc(compress.HandlerFuncReader(c.metricUpdateAllJSON)))
-
-	// Получение значений
-	r.Get("/value/{type}/{name}", c.metricGet)
-	r.Post("/value/", compress.HandlerFuncReader(compress.HandlerFuncWriter(c.metricGetJSON, compress.BestSpeed)))
-
-	// Отчет по метрикам
-	r.Get("/", compress.HandlerFuncWriter(c.metricGetAll, compress.BestSpeed))
-
-	// ping
-	r.Get("/ping", c.ping)
-
-	return r
+func New(app *metricservice.MetricService, cfg config.Server, hl *health.Health, hk string) *Handler {
+	return &Handler{metric: app, health: hl, hashKey: hk, serverAddress: cfg.Address, pprofAddress: cfg.PprofAddress}
 }
 
 func (c *Handler) Start(_ context.Context) error {
-	addr := c.serverAddress
-	c.server = &http.Server{Addr: addr, Handler: c.GetRouter()}
+	// Инициализируем сервер
+	c.server = &http.Server{Addr: c.serverAddress, Handler: c.GetRouter()}
 
-	logger.Info().Str("address", addr).Msg("Starting server")
+	// Инициализируем pprof
+	c.pprofServer = &http.Server{Addr: c.pprofAddress, Handler: pprofRouter()}
+
+	logger.Info().Str("address", c.pprofAddress).Msg("Start pprof server")
+	go func() {
+		err := c.pprofServer.ListenAndServe()
+		if err != nil {
+			logger.Error().Err(err).Msg("handlers - start - c.pprofServer.ListenAndServe")
+		}
+	}()
+
+	logger.Info().Str("address", c.serverAddress).Msg("Starting server")
 	return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServe())
 }
 
 func (c *Handler) Shutdown(_ context.Context) error {
 	logger.Info().Msg("Ctrl + C command got, shutting down server")
+	_ = c.pprofServer.Shutdown(context.Background())
 	return c.server.Shutdown(context.Background())
 }

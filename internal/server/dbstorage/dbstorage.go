@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"time"
 
 	"github.com/jackc/pgerrcode"
@@ -34,7 +35,7 @@ func New(connStr string, ctx context.Context, retryIntervals []time.Duration) *D
 	}
 	return dbs
 }
-func (ds *DBStorage) get(mt *metricservice.Metrics) error {
+func (ds *DBStorage) get(mt *entity.Metrics) error {
 	row := ds.conn.QueryRow(ds.ctx, sqlGetMetric, mt.MType, mt.ID)
 
 	err := row.Scan(&mt.MType, &mt.ID, &mt.Delta, &mt.Value)
@@ -48,7 +49,7 @@ func (ds *DBStorage) get(mt *metricservice.Metrics) error {
 	return nil
 }
 
-func (ds *DBStorage) set(mt metricservice.Metrics) error {
+func (ds *DBStorage) set(mt entity.Metrics) error {
 	var err error
 	if mt.MType == metricservice.Gauge {
 		logger.Debug().Str("MType", mt.MType).Str("ID", mt.ID).Float64("Value", *mt.Value).Msg("set value input params")
@@ -62,9 +63,9 @@ func (ds *DBStorage) set(mt metricservice.Metrics) error {
 	return nil
 }
 
-func (ds *DBStorage) getAll() ([]*metricservice.Metrics, error) {
+func (ds *DBStorage) getAll() ([]*entity.Metrics, error) {
 	rows, _ := ds.conn.Query(ds.ctx, `select name, type, delta, value from metric`)
-	mts, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[metricservice.Metrics])
+	mts, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[entity.Metrics])
 	if err != nil {
 		return nil, fmt.Errorf("error due scan row from select all metrics: %w", err)
 	}
@@ -77,7 +78,7 @@ func (ds *DBStorage) Ping() error {
 	return pe
 }
 
-func (ds *DBStorage) Get(mt *metricservice.Metrics) (err error) {
+func (ds *DBStorage) Get(mt *entity.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.get(mt)
 		var pgErr *pgconn.PgError
@@ -96,7 +97,7 @@ func (ds *DBStorage) Get(mt *metricservice.Metrics) (err error) {
 	return
 }
 
-func (ds *DBStorage) Set(mt metricservice.Metrics) (err error) {
+func (ds *DBStorage) Set(mt entity.Metrics) (err error) {
 	for _, ri := range ds.retryIntervals {
 		err = ds.set(mt)
 
@@ -116,7 +117,7 @@ func (ds *DBStorage) Set(mt metricservice.Metrics) (err error) {
 	return
 }
 
-func (ds *DBStorage) GetAll() (mts []*metricservice.Metrics, err error) {
+func (ds *DBStorage) GetAll() (mts []*entity.Metrics, err error) {
 
 	for _, ri := range ds.retryIntervals {
 		mts, err = ds.getAll()
@@ -135,7 +136,7 @@ func (ds *DBStorage) GetAll() (mts []*metricservice.Metrics, err error) {
 	return
 }
 
-func (ds *DBStorage) SetAll(mts []metricservice.Metrics) (err error) {
+func (ds *DBStorage) SetAll(mts []entity.Metrics) (err error) {
 	for _, m := range mts {
 		err = ds.set(m)
 		if err != nil {

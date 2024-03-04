@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 	"strconv"
@@ -13,7 +14,7 @@ func (c *Handler) metricUpdate(w http.ResponseWriter, r *http.Request) {
 
 	value := chi.URLParam(r, "value")
 
-	m := metricservice.Metrics{
+	m := entity.Metrics{
 		ID:    chi.URLParam(r, "name"),
 		MType: chi.URLParam(r, "type"),
 	}

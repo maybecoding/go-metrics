@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
-	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
+	"github.com/mailru/easyjson"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"net/http"
 )
@@ -14,13 +14,16 @@ func (c *Handler) metricUpdateAllJSON(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 	}()
 
-	decoder := json.NewDecoder(r.Body)
-	defer func() {
-		_ = r.Body.Close()
-	}()
+	var mts entity.MetricsList
+	err := easyjson.UnmarshalFromReader(r.Body, &mts)
 
-	var mts []metricservice.Metrics
-	err := decoder.Decode(&mts)
+	//decoder := json.NewDecoder(r.Body) Оптимизировано инкремент #16
+	//defer func() {
+	//	_ = r.Body.Close()
+	//}()
+	//
+	//var mts []entity.Metrics
+	//err := decoder.Decode(&mts)
 	if err != nil {
 		status = http.StatusBadRequest
 		logger.Debug().Err(err).Msg("error due decode request")

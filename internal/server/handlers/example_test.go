@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/server/app"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"io"
@@ -23,18 +24,18 @@ func Example_metricUpdateAllJSON() {
 
 	// Подготавливаем данные к отправке по каждой метрики по metricCnt
 	const metricCnt = 2
-	metrics := make([]sapp.Metrics, 0, metricCnt*2)
+	metrics := make([]entity.Metrics, 0, metricCnt*2)
 	for i := 0; i <= metricCnt; i += 1 {
 		// Метрика gauge
 		value := float64(i)
-		metrics = append(metrics, sapp.Metrics{
+		metrics = append(metrics, entity.Metrics{
 			ID:    fmt.Sprintf("gauge_%d", i),
 			MType: sapp.Gauge,
 			Value: &value,
 		})
 		// Метрика counter
 		delta := int64(i)
-		metrics = append(metrics, sapp.Metrics{
+		metrics = append(metrics, entity.Metrics{
 			ID:    fmt.Sprintf("counter_%d", i),
 			MType: sapp.Counter,
 			Delta: &delta,
@@ -113,7 +114,7 @@ func Example_metricGetJSON() {
 		for _, tp := range metricTypes { // for every metric type
 			fmt.Println("#", i, tp)
 			// prepare metric
-			m := sapp.Metrics{MType: tp, ID: fmt.Sprintf("%s_%d", tp, i)}
+			m := entity.Metrics{MType: tp, ID: fmt.Sprintf("%s_%d", tp, i)}
 			// Prepare json with all messages for send
 			bts, err := json.Marshal(m)
 			fmt.Println("err1", err)

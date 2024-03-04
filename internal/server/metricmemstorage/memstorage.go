@@ -3,6 +3,7 @@ package metricmemstorage
 import (
 	"context"
 	"fmt"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"sync"
@@ -18,7 +19,7 @@ type MetricMemStorage struct {
 	muCounter      sync.RWMutex
 }
 
-func (mem *MetricMemStorage) Set(m metricservice.Metrics) error {
+func (mem *MetricMemStorage) Set(m entity.Metrics) error {
 	if m.MType == metricservice.Gauge {
 		mem.muGauge.Lock()
 		mem.dataGauge[m.ID] = *m.Value
@@ -31,7 +32,7 @@ func (mem *MetricMemStorage) Set(m metricservice.Metrics) error {
 	return nil
 }
 
-func (mem *MetricMemStorage) Get(m *metricservice.Metrics) error {
+func (mem *MetricMemStorage) Get(m *entity.Metrics) error {
 	if m.MType == metricservice.Gauge {
 		mem.muGauge.RLock()
 		v, ok := mem.dataGauge[m.ID]
@@ -53,19 +54,19 @@ func (mem *MetricMemStorage) Get(m *metricservice.Metrics) error {
 	return nil
 }
 
-func (mem *MetricMemStorage) GetAll() ([]*metricservice.Metrics, error) {
-	mtr := make([]*metricservice.Metrics, 0, len(mem.dataGauge)+len(mem.dataCounter))
+func (mem *MetricMemStorage) GetAll() ([]*entity.Metrics, error) {
+	mtr := make([]*entity.Metrics, 0, len(mem.dataGauge)+len(mem.dataCounter))
 	mem.muGauge.RLock()
 	for name, value := range mem.dataGauge {
 		v := value
-		mtr = append(mtr, &metricservice.Metrics{ID: name, MType: metricservice.Gauge, Value: &v})
+		mtr = append(mtr, &entity.Metrics{ID: name, MType: metricservice.Gauge, Value: &v})
 	}
 	mem.muGauge.RUnlock()
 
 	mem.muCounter.RLock()
 	for name, value := range mem.dataCounter {
 		v := value
-		mtr = append(mtr, &metricservice.Metrics{ID: name, MType: metricservice.Counter, Delta: &v})
+		mtr = append(mtr, &entity.Metrics{ID: name, MType: metricservice.Counter, Delta: &v})
 	}
 	mem.muCounter.RUnlock()
 	return mtr, nil
@@ -129,7 +130,7 @@ func (mem *MetricMemStorage) restoreMetrics() {
 	}
 }
 
-func (mem *MetricMemStorage) SetAll(mts []metricservice.Metrics) error {
+func (mem *MetricMemStorage) SetAll(mts []entity.Metrics) error {
 	// Чисто для обеспечения обратной совместимости
 	for _, mt := range mts {
 		err := mem.Set(mt)

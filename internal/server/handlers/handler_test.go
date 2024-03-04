@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"io"
 	"net/http"
@@ -60,7 +61,7 @@ func TestController(t *testing.T) {
 	store := metricmemstorage.NewMemStorage(dumper, 10, false)
 	a := metricservice.New(store)
 	hl := health.New()
-	contr := New(a, "", hl, "")
+	contr := New(a, config.Server{}, hl, "")
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()
 

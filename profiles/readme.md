@@ -1,4 +1,5 @@
-## Оптимизация аллокаций памяти
+# Оптимизация аллокаций памяти
+## Агент
 ### Диагностика аллокаций памяти
 Сбор метрик выполнялся на основе теста agent_benchmark_test.go из каталога cmd/agent с помощью команды
 ```shell
@@ -59,3 +60,51 @@ go tool pprof -top -diff_base=base.pprof result.pprof
  -556.18MB 59.71% 59.71%  -670.26MB 71.95%  compress/flate.NewWriter (inline)
 
 ```
+
+## Сервер
+### Методика проверки
+Сбор метрик выполнялся с помощью запуска приложения:
+```shell
+go run ./cmd/server -d 'postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable'
+```
+
+С последующим запуском нагрузочного скрипта
+```shell
+make test-memory
+```
+Снятие метрик производилось после завершения скрипта командой
+```shell
+curl -o result.profile  'http://localhost:8090/debug/pprof/heap?gc=0'
+```
+
+### Узкие места
+Обнаружено, что основные аллокации приходят на декодирование json
+```
+18.03MB 23.60%  23.60% 18.53MB 24.26%  encoding/json.(*Decoder).refill
+```
+
+### Выполненные действия
+Блок, кода по сжатию отправляемых данных в файле internal/server/handlers/metricupdatealljson.go:
+```go
+decoder := json.NewDecoder(r.Body) Оптимизировано инкремент #16
+defer func() {
+	_ = r.Body.Close()
+}()
+
+var mts []entity.Metrics
+err := decoder.Decode(&mts)
+```
+
+Был заменен на:
+```go
+var mts entity.MetricsList
+err := easyjson.UnmarshalFromReader(r.Body, &mts)
+```
+Благодаря сгенерированному коду по объектам в пакете entity
+
+### Результат
+Разбор json теперь занимает меньше памяти, однако теперь само чтение из потока по занимает довольно значимую часть
+```
+11.53MB 12.75  12.75%  11.53MB 12.75  io.ReadAll
+```
+

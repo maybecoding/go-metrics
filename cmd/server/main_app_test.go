@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/require"
@@ -33,14 +34,14 @@ func BenchmarkSetAll(b *testing.B) {
 	for i := 0; i < times; i++ {
 		b.StopTimer()
 		value := rand.Float64()
-		mGauge := sapp.Metrics{
+		mGauge := entity.Metrics{
 			ID:    fmt.Sprintf("Gauge_%d", i),
 			MType: sapp.Gauge,
 			Value: &value,
 		}
 
 		delta := int64(100)
-		mCounter := sapp.Metrics{
+		mCounter := entity.Metrics{
 			ID:    fmt.Sprintf("Counter_%d", i),
 			MType: sapp.Counter,
 			Delta: &delta,

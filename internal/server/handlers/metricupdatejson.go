@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"net/http"
 
-	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
 
@@ -31,7 +31,7 @@ func (c *Handler) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer func() { _ = r.Body.Close() }()
 
-	m := metricservice.Metrics{}
+	m := entity.Metrics{}
 	err = decoder.Decode(&m)
 	if err != nil {
 		status, logMessage = http.StatusBadRequest, "failed to parse request JSON"

@@ -2,6 +2,7 @@ package metricservice
 
 import (
 	"errors"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
 
@@ -9,12 +10,6 @@ type (
 	MetricService struct {
 		store Store
 		//backupStorage BackupStorage
-	}
-	Metrics struct {
-		ID    string   `json:"id" db:"name"`               // Имя метрики
-		MType string   `json:"type" db:"type"`             // Параметр, принимающий значение gauge или counter
-		Delta *int64   `json:"delta,omitempty" db:"delta"` // Значение метрики в случае передачи counter
-		Value *float64 `json:"value,omitempty" db:"value"` // Значение метрики в случае передачи gauge
 	}
 )
 
@@ -29,14 +24,14 @@ var (
 )
 
 type Store interface {
-	Get(*Metrics) error
-	GetAll() ([]*Metrics, error)
+	Get(*entity.Metrics) error
+	GetAll() ([]*entity.Metrics, error)
 
-	Set(Metrics) error
-	SetAll([]Metrics) error
+	Set(entity.Metrics) error
+	SetAll([]entity.Metrics) error
 }
 
-func (ms *MetricService) Get(m *Metrics) (e error) {
+func (ms *MetricService) Get(m *entity.Metrics) (e error) {
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrNoMetricValue //ErrMetricTypeIncorrect
 	}
@@ -59,7 +54,7 @@ func (ms *MetricService) Get(m *Metrics) (e error) {
 	return err
 }
 
-func (ms *MetricService) Set(m Metrics) error {
+func (ms *MetricService) Set(m entity.Metrics) error {
 
 	if m.MType != Gauge && m.MType != Counter {
 		return ErrMetricTypeIncorrect
@@ -81,11 +76,11 @@ func (ms *MetricService) Set(m Metrics) error {
 
 }
 
-func (ms *MetricService) GetAll() ([]*Metrics, error) {
+func (ms *MetricService) GetAll() ([]*entity.Metrics, error) {
 	return ms.store.GetAll()
 }
 
-func (ms *MetricService) SetAll(mts []Metrics) error {
+func (ms *MetricService) SetAll(mts []entity.Metrics) error {
 	err := ms.store.SetAll(mts)
 	if err != nil {
 		logger.Error().Err(err).Msg("error due SetAll metrics")

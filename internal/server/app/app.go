@@ -72,7 +72,7 @@ func (a *App) InitHandler() *App {
 		panic("first app.Start method must be called, service is not initialized")
 	}
 	// Создаем хэндлер
-	a.handler = handlers.New(a.metricSrv, a.cfg.Server.Address, a.hl, a.cfg.Server.HashKey)
+	a.handler = handlers.New(a.metricSrv, a.cfg.Server, a.hl, a.cfg.Server.HashKey)
 	// ЗАПУСКАЕМ контроллер
 	a.starter.OnRun(a.handler.Start)
 	// После завершения приложения потушим сервер

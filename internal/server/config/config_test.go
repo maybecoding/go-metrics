@@ -10,7 +10,7 @@ import (
 
 func getDefaultConfig() *Config {
 	return &Config{
-		Server: Server{Address: "localhost:8080", HashKey: ""},
+		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: ""},
 		Log:    Log{Level: "debug"},
 		BackupStorage: BackupStorage{
 			Interval:      300,
