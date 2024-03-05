@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
-	"github.com/maybecoding/go-metrics.git/pkg/health"
-	"net/http"
-
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
+	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"net/http"
+	"sync"
 )
 
 const (
@@ -46,6 +47,13 @@ func (c *Handler) Start(_ context.Context) error {
 
 	logger.Info().Str("address", c.serverAddress).Msg("Starting server")
 	return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServe())
+}
+
+var mtsPool = sync.Pool{
+	New: func() any {
+		ml := make(entity.MetricsList, 0, 50)
+		return ml
+	},
 }
 
 func (c *Handler) Shutdown(_ context.Context) error {

@@ -97,14 +97,16 @@ err := decoder.Decode(&mts)
 
 Был заменен на:
 ```go
-var mts entity.MetricsList
-err := easyjson.UnmarshalFromReader(r.Body, &mts)
+mts := mtsPool.Get().(entity.MetricsList)
+mtsForRead := mts[0:0]
+err := easyjson.UnmarshalFromReader(r.Body, &mtsForRead)
+defer mtsPool.Put(mts)
 ```
 Благодаря сгенерированному коду по объектам в пакете entity
 
 ### Результат
 Разбор json теперь занимает меньше памяти, однако теперь само чтение из потока по занимает довольно значимую часть
 ```
-11.53MB 12.75  12.75%  11.53MB 12.75  io.ReadAll
+9751.58kB 54.29%  54.29% 9751.58kB 54.29%  io.ReadAll
 ```
 

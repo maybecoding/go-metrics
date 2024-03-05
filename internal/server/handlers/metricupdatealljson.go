@@ -14,8 +14,10 @@ func (c *Handler) metricUpdateAllJSON(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 	}()
 
-	var mts entity.MetricsList
-	err := easyjson.UnmarshalFromReader(r.Body, &mts)
+	mts := mtsPool.Get().(entity.MetricsList)
+	mtsForRead := mts[0:0]
+	err := easyjson.UnmarshalFromReader(r.Body, &mtsForRead)
+	defer mtsPool.Put(mts)
 
 	//decoder := json.NewDecoder(r.Body) Оптимизировано инкремент #16
 	//defer func() {
