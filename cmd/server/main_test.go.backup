@@ -1,0 +1,111 @@
+package main
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
+	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
+	sapp "github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/pkg/health"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/stretchr/testify/require"
+	"math/rand"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
+
+func BenchmarkSetAll(b *testing.B) {
+	var (
+		//hashKey     = "super mega secret "
+		handlerPath = "/updates/"
+	)
+
+	logger.Init("debug")
+
+	// Если задана база данных
+	var store sapp.Store
+	var app *sapp.Metric
+
+	ctx := context.Background()
+
+	// HealthCheck
+	hl := health.New()
+
+	dbStore := dbstorage.New("postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable", ctx, []time.Duration{time.Second})
+	// Просим HealthCheck присмотреть за БД
+	hl.Watch(dbStore.Ping)
+	store = dbStore
+	defer dbStore.ConnectionClose()
+
+	app = sapp.New(store)
+
+	// Создаем контроллер и вверяем ему приложение
+	//contr := handlers.New(app, "", hl, hashKey)
+	contr := handlers.New(app, "", hl, "")
+	ts := httptest.NewServer(contr.GetRouter())
+	defer ts.Close()
+
+	// Подготавливаем данные к отправке
+	const metricCnt = 20
+	metrics := make([]sapp.Metrics, 0, metricCnt*2)
+
+	for i := 0; i <= metricCnt; i += 1 {
+		value := rand.Float64()
+		metrics = append(metrics, sapp.Metrics{
+			ID:    fmt.Sprintf("Gauge_%d", i),
+			MType: sapp.Gauge,
+			Value: &value,
+		})
+
+		delta := int64(i)
+		metrics = append(metrics, sapp.Metrics{
+			ID:    fmt.Sprintf("Counter_%d", i),
+			MType: sapp.Counter,
+			Delta: &delta,
+		})
+	}
+
+	// Составим сообщения к отправке используя подпись и gzip
+	jsonM, err := json.Marshal(metrics)
+	require.NoError(b, err)
+
+	// Создаем сжатый поток
+	//dataBuf := bytes.NewBuffer(nil)
+	//// Записываем данные и сжимаем
+	//gzipW := gzip.NewWriter(dataBuf)
+	//_, err = gzipW.Write(jsonM)
+	//require.NoError(b, err)
+	//err = gzipW.Close()
+	//dataBytes := dataBuf.Bytes()
+	//
+	//hs := hmac.New(sha256.New, []byte(hashKey))
+	//hs.Write(dataBytes)
+	//hsSum := hs.Sum(nil)
+	//hsHex := hex.EncodeToString(hsSum)
+
+	//r.SetHeader("HashSHA256", hsHex)
+
+	b.ResetTimer()
+	// Создадим массив из элементов к отправке
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		//buf := bytes.NewBuffer(dataBytes)
+		buf := bytes.NewBuffer(jsonM)
+		req, err := http.NewRequest("POST", ts.URL+handlerPath, buf)
+		require.NoError(b, err)
+
+		//req.Header.Set("HashSHA256", hsHex)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Encoding", "gzip")
+
+		b.StartTimer()
+		resp, err := ts.Client().Do(req)
+		require.NoError(b, err)
+		_ = resp.Body.Close()
+		require.Equal(b, http.StatusOK, resp.StatusCode)
+	}
+}

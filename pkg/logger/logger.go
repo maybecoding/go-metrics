@@ -1,3 +1,4 @@
+// Package logger - package for logging
 package logger
 
 import (
@@ -10,6 +11,9 @@ import (
 // Не лучшее решение, но самое простое
 var lg *zerolog.Logger
 
+// Init - init of logger variable using passed log level, for values:
+// fatal error info debug
+// if value not from list above sets debug log level
 func Init(level string) {
 
 	// Пока используем консольный вывод
@@ -39,15 +43,26 @@ func Init(level string) {
 	lg = &zl
 }
 
+// Fatal - starts a new message with fatal level. The os.Exit(1) function is called by the Msg method, which terminates the program immediately.
+// You must call Msg on the returned event in order to send the event.
 func Fatal() *zerolog.Event {
 	return lg.Fatal()
 }
+
+// Error starts a new message with error level.
+// You must call Msg on the returned event in order to send the event.
 func Error() *zerolog.Event {
 	return lg.Error()
 }
+
+// Info starts a new message with info level.
+// You must call Msg on the returned event in order to send the event
 func Info() *zerolog.Event {
 	return lg.Info()
 }
+
+// Debug starts a new message with debug level.
+// You must call Msg on the returned event in order to send the event.
 func Debug() *zerolog.Event {
 	return lg.Debug()
 }

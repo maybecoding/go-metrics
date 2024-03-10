@@ -1,3 +1,4 @@
+// Package config for configuration structs
 package config
 
 import (
@@ -8,6 +9,7 @@ import (
 	"time"
 )
 
+// Config - root struct
 type (
 	Config struct {
 		Server        Server
@@ -15,28 +17,31 @@ type (
 		BackupStorage BackupStorage
 		Database      Database
 	}
-
+	// Server - struct for server config
 	Server struct {
-		Address string
-		HashKey string
+		Address      string
+		PprofAddress string
+		HashKey      string
 	}
-
+	// Log - struct for log config
 	Log struct {
 		Level string
 	}
-
+	// BackupStorage - struct for backup functionality config
 	BackupStorage struct {
 		Interval      int64
 		Path          string
 		IsRestoreOnUp bool
 	}
-
+	// Database - struct for db config
 	Database struct {
 		ConnStr        string
 		RetryIntervals []time.Duration
+		RunMigrations  bool
 	}
 )
 
+// NewConfig - constructor for config structures, reads params from flags and env, env overrides flags
 func NewConfig() *Config {
 	// serverAddress
 	serverAddress := flag.String("a", "localhost:8080", "Endpoint HTTP-server address")
@@ -92,7 +97,7 @@ func NewConfig() *Config {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
 	cfg := &Config{
-		Server: Server{Address: *serverAddress, HashKey: *key},
+		Server: Server{Address: *serverAddress, PprofAddress: "localhost:8090", HashKey: *key},
 		Log:    Log{Level: *logLevel},
 		BackupStorage: BackupStorage{
 			Interval:      *storeIntervalSec,
@@ -102,6 +107,7 @@ func NewConfig() *Config {
 		Database: Database{
 			ConnStr:        *databaseConnStr,
 			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			RunMigrations:  true,
 		},
 	}
 

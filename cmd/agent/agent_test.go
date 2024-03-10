@@ -7,7 +7,7 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/collector"
 	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/internal/agent/sender"
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/compress"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
@@ -101,7 +101,7 @@ func TestAgent(t *testing.T) {
 					}
 				}
 				assert.NotNil(t, mFound, "sent metric must be in collector")
-				if mFound.MType == metric.Gauge {
+				if mFound.MType == metricservice.Gauge {
 					assert.NotNil(t, mFound.Value)
 					assert.NotNil(t, mReq.Value)
 					assert.Equal(t, *mReq.Value, *mFound.Value)

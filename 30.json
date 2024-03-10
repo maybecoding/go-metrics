@@ -1,0 +1,182 @@
+[
+  {
+    "id": "d99d73fd5214a2a86630326e387fa8dd",
+    "type": "gauge",
+    "delta": null,
+    "value": 84261.97202525787
+  },
+  {
+    "id": "de83397d03d1737305b4f41e9fca48a4",
+    "type": "gauge",
+    "delta": null,
+    "value": 69776.60913923131
+  },
+  {
+    "id": "347e6f9246a482a00a0096901f63a9b0",
+    "type": "gauge",
+    "delta": null,
+    "value": 62653.391282100965
+  },
+  {
+    "id": "a387d1c2a4ed60dcebaf110ec84e3032",
+    "type": "gauge",
+    "delta": null,
+    "value": 95261.10324791528
+  },
+  {
+    "id": "86dc6314265558823f67317a71d0d76a",
+    "type": "gauge",
+    "delta": null,
+    "value": 177.30508965012604
+  },
+  {
+    "id": "97e7558a18ee5fa092069262854c1444",
+    "type": "counter",
+    "delta": 90,
+    "value": null
+  },
+  {
+    "id": "4739abfcf9c47337fbfc7a8891709c95",
+    "type": "counter",
+    "delta": 20,
+    "value": null
+  },
+  {
+    "id": "fcfdf2a8a3aceae6ac9405f5b7dd0f61",
+    "type": "counter",
+    "delta": 216,
+    "value": null
+  },
+  {
+    "id": "79c1d350d66001ba6e619e85328337b7",
+    "type": "gauge",
+    "delta": null,
+    "value": 93682.49206051213
+  },
+  {
+    "id": "1c1a590946d2304d9cf145005f06486c",
+    "type": "counter",
+    "delta": 743,
+    "value": null
+  },
+  {
+    "id": "b9c5534b4cd8de4ae8b6b1adfef7d7a9",
+    "type": "counter",
+    "delta": 475,
+    "value": null
+  },
+  {
+    "id": "cef058d0e95a0419e04c21b635b29c7c",
+    "type": "counter",
+    "delta": 960,
+    "value": null
+  },
+  {
+    "id": "a7ecb20c38374ad2a6a2b92bfb112b96",
+    "type": "counter",
+    "delta": 555,
+    "value": null
+  },
+  {
+    "id": "cdb9430d3d259dd907cc859baf7ed8ae",
+    "type": "counter",
+    "delta": 978,
+    "value": null
+  },
+  {
+    "id": "7f995146720fa2ef63c0d6a4665aabe6",
+    "type": "gauge",
+    "delta": null,
+    "value": 61964.7430470585
+  },
+  {
+    "id": "3b5ac8093bd6c27597b389419c567a9e",
+    "type": "counter",
+    "delta": 310,
+    "value": null
+  },
+  {
+    "id": "ad38cf14b9d008a18d4765ec382c37f9",
+    "type": "counter",
+    "delta": 43,
+    "value": null
+  },
+  {
+    "id": "693e5de5098c2579467208cfbc4a92e5",
+    "type": "gauge",
+    "delta": null,
+    "value": 54331.379925083544
+  },
+  {
+    "id": "0b315c6261da0abf5ce15579d6acf699",
+    "type": "gauge",
+    "delta": null,
+    "value": 70549.42900168581
+  },
+  {
+    "id": "b435bb4778659882a9fb3373310cac5c",
+    "type": "counter",
+    "delta": 775,
+    "value": null
+  },
+  {
+    "id": "5784bcd6df22fa926302c46cd5d9e0e1",
+    "type": "counter",
+    "delta": 88,
+    "value": null
+  },
+  {
+    "id": "2c7cf0d505fb6ff87d3f41b0b50e0ce4",
+    "type": "counter",
+    "delta": 358,
+    "value": null
+  },
+  {
+    "id": "e368efef4371b4cca06027b7c33ad24d",
+    "type": "counter",
+    "delta": 935,
+    "value": null
+  },
+  {
+    "id": "30c8431b795006025adcfa1d1104c6af",
+    "type": "gauge",
+    "delta": null,
+    "value": 23487.81137269551
+  },
+  {
+    "id": "abb5a739dd773e769e2b6fcf5f1980f4",
+    "type": "counter",
+    "delta": 178,
+    "value": null
+  },
+  {
+    "id": "a259d8ef6fd25f0f6fdd5467024c8d8a",
+    "type": "gauge",
+    "delta": null,
+    "value": 68506.54793611668
+  },
+  {
+    "id": "ab1afc782e61aab727fafd25c3aaada1",
+    "type": "gauge",
+    "delta": null,
+    "value": 69144.97322881379
+  },
+  {
+    "id": "d6d6718fe42593709df3100d9f26e07a",
+    "type": "gauge",
+    "delta": null,
+    "value": 95611.62634555764
+  },
+  {
+    "id": "0c865330bdd44feacc37d4c1721fe44e",
+    "type": "counter",
+    "delta": 742,
+    "value": null
+  },
+  {
+    "id": "c8f2c352c90ddb8796f358ab24bdedc7",
+    "type": "counter",
+    "delta": 44,
+    "value": null
+  }
+]

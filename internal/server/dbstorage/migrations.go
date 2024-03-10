@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/maybecoding/go-metrics.git/pkg/logger"
 )
 
 func runMigrations(dsn string) error {
@@ -34,4 +35,11 @@ func runMigrations(dsn string) error {
 		return fmt.Errorf("failed to apply migrations to DB")
 	}
 	return nil
+}
+
+func Migrate(dsn string) {
+	err := runMigrations(dsn)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("can't run migrations")
+	}
 }

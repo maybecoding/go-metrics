@@ -2,16 +2,14 @@ package handlers
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
-	"github.com/maybecoding/go-metrics.git/pkg/hashcheck"
+	"github.com/maybecoding/go-metrics.git/internal/server/config"
+	"github.com/maybecoding/go-metrics.git/internal/server/entity"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/health"
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
-	"github.com/maybecoding/go-metrics.git/pkg/compress"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"net/http"
+	"sync"
 )
 
 const (
@@ -19,57 +17,47 @@ const (
 )
 
 type Handler struct {
-	metric        *metric.Metric
+	metric        *metricservice.MetricService
 	serverAddress string
+	pprofAddress  string
 	server        *http.Server
 	health        *health.Health
 	hashKey       string
+	pprofServer   *http.Server
 }
 
-func New(app *metric.Metric, serverAddress string, hl *health.Health, hk string) *Handler {
-	return &Handler{metric: app, serverAddress: serverAddress, health: hl, hashKey: hk}
+func New(app *metricservice.MetricService, cfg config.Server, hl *health.Health, hk string) *Handler {
+	return &Handler{metric: app, health: hl, hashKey: hk, serverAddress: cfg.Address, pprofAddress: cfg.PprofAddress}
 }
 
-func (c *Handler) GetRouter() chi.Router {
+func (c *Handler) Start(_ context.Context) error {
+	// Инициализируем сервер
+	c.server = &http.Server{Addr: c.serverAddress, Handler: c.GetRouter()}
 
-	r := chi.NewRouter()
+	// Инициализируем pprof
+	c.pprofServer = &http.Server{Addr: c.pprofAddress, Handler: pprofRouter()}
 
-	// Подключаем логер
-	r.Use(logger.Handler)
+	logger.Info().Str("address", c.pprofAddress).Msg("Start pprof server")
+	go func() {
+		err := c.pprofServer.ListenAndServe()
+		if err != nil {
+			logger.Error().Err(err).Msg("handlers - start - c.pprofServer.ListenAndServe")
+		}
+	}()
 
-	// Подключаем проверку хэшей
-	hashCheck := hashcheck.New(sha256.New, c.hashKey, "HashSHA256")
-	//r.Use(hashCheck.Handler)
-
-	// Установка значений
-	r.Post("/update/{type}/{name}/{value}", c.metricUpdate)
-	r.Post("/update/", compress.HandlerFuncReader(compress.HandlerFuncWriter(c.metricUpdateJSON, compress.BestSpeed)))
-
-	r.Post("/updates/", hashCheck.HandlerFunc(compress.HandlerFuncReader(c.metricUpdateAllJSON)))
-
-	// Получение значений
-	r.Get("/value/{type}/{name}", c.metricGet)
-	r.Post("/value/", compress.HandlerFuncReader(compress.HandlerFuncWriter(c.metricGetJSON, compress.BestSpeed)))
-
-	// Отчет по метрикам
-	r.Get("/", compress.HandlerFuncWriter(c.metricGetAll, compress.BestSpeed))
-
-	// ping
-	r.Get("/ping", c.ping)
-
-	return r
-}
-
-func (c *Handler) Start() error {
-	addr := c.serverAddress
-	c.server = &http.Server{Addr: addr, Handler: c.GetRouter()}
-
-	logger.Info().Str("address", addr).Msg("Starting server")
+	logger.Info().Str("address", c.serverAddress).Msg("Starting server")
 	return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServe())
 }
 
-func (c *Handler) Shutdown(ctx context.Context) error {
-	<-ctx.Done()
+var mtsPool = sync.Pool{
+	New: func() any {
+		ml := make(entity.MetricsList, 0, 50)
+		return ml
+	},
+}
+
+func (c *Handler) Shutdown(_ context.Context) error {
 	logger.Info().Msg("Ctrl + C command got, shutting down server")
+	_ = c.pprofServer.Shutdown(context.Background())
 	return c.server.Shutdown(context.Background())
 }

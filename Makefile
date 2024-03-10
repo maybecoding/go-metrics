@@ -63,7 +63,17 @@ mg-down:
 	  -database $(DB_URL) \
 	  down -all
 
-.PHONY: test-100k
+
+.PHONY: test-10k
+test-10k:
+	curl -X POST \
+	  -H "Content-Type: application/json" \
+	  -H "Content-Encoding: gzip" \
+	  --data-binary "@10k.json.gz" \
+	  --compressed \
+	  http://localhost:8080/updates/
+
+.PHONY: test-10k
 test-100k:
 	curl -X POST \
 	  -H "Content-Type: application/json" \
@@ -82,4 +92,18 @@ test-100kh:
  	  --compressed \
  	  http://localhost:8080/updates/
 
+
+.PHONY: test-memory
+test-memory:
+	for i in $$(seq 1 1000); do \
+		curl -X POST \
+		  -H "Content-Type: application/json" \
+		  -H "HashSHA256: 1e53a7c6f744b1a520eeee986912db8c7af7dfd68d505ea15bb5e23cf4dbb550" \
+		  --data-binary "@30.json" \
+		  http://localhost:8080/updates/; \
+	done
+
+.PHONY: easyjson
+easyjson:
+	easyjson -all -snake_case ./internal/server/entity/metric.go
 

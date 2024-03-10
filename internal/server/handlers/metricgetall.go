@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 )
 
 func (c *Handler) metricGetAll(w http.ResponseWriter, r *http.Request) {
@@ -24,9 +24,9 @@ func (c *Handler) metricGetAll(w http.ResponseWriter, r *http.Request) {
 
 	for i, m := range mtr {
 		value := ""
-		if m.MType == metric.Gauge {
+		if m.MType == metricservice.Gauge {
 			value = strconv.FormatFloat(*m.Value, FmtFloat, -1, 64)
-		} else if m.MType == metric.Counter {
+		} else if m.MType == metricservice.Counter {
 			value = strconv.FormatInt(*m.Delta, 10)
 		}
 		result.WriteString(fmt.Sprintf("<tr><td>%d</td><td>%s</td><td>%s</td><td>%s</td></tr>", i, m.MType, m.ID, value))

@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/pkg/health"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/maybecoding/go-metrics.git/internal/server/metric"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricmemstorage"
+	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,9 +59,9 @@ func TestController(t *testing.T) {
 
 	dumper := metricmemstorage.NewDumper("")
 	store := metricmemstorage.NewMemStorage(dumper, 10, false)
-	a := metric.New(store)
+	a := metricservice.New(store)
 	hl := health.New()
-	contr := New(a, "", hl, "")
+	contr := New(a, config.Server{}, hl, "")
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()
 
