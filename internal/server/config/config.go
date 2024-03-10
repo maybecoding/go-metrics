@@ -29,8 +29,8 @@ type (
 	}
 	// BackupStorage - struct for backup functionality config
 	BackupStorage struct {
-		Interval      int64
 		Path          string
+		Interval      int64
 		IsRestoreOnUp bool
 	}
 	// Database - struct for db config

@@ -64,7 +64,7 @@ func (ds *DBStorage) set(mt entity.Metrics) error {
 }
 
 func (ds *DBStorage) getAll() ([]*entity.Metrics, error) {
-	rows, _ := ds.conn.Query(ds.ctx, `select name, type, delta, value from metric`)
+	rows, _ := ds.conn.Query(ds.ctx, `select delta, value, name, type from metric`)
 	mts, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[entity.Metrics])
 	if err != nil {
 		return nil, fmt.Errorf("error due scan row from select all metrics: %w", err)

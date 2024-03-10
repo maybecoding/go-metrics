@@ -22,8 +22,8 @@ type Handler struct {
 	pprofAddress  string
 	server        *http.Server
 	health        *health.Health
-	hashKey       string
 	pprofServer   *http.Server
+	hashKey       string
 }
 
 func New(app *metricservice.MetricService, cfg config.Server, hl *health.Health, hk string) *Handler {
@@ -52,7 +52,7 @@ func (c *Handler) Start(_ context.Context) error {
 var mtsPool = sync.Pool{
 	New: func() any {
 		ml := make(entity.MetricsList, 0, 50)
-		return ml
+		return &ml
 	},
 }
 
