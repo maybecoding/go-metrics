@@ -22,12 +22,13 @@ type Handler struct {
 	pprofAddress  string
 	server        *http.Server
 	health        *health.Health
-	hashKey       string
 	pprofServer   *http.Server
+	hashKey       string
+	cryptoKey     string
 }
 
 func New(app *metricservice.MetricService, cfg config.Server, hl *health.Health, hk string) *Handler {
-	return &Handler{metric: app, health: hl, hashKey: hk, serverAddress: cfg.Address, pprofAddress: cfg.PprofAddress}
+	return &Handler{metric: app, health: hl, hashKey: hk, serverAddress: cfg.Address, pprofAddress: cfg.PprofAddress, cryptoKey: cfg.CryptoKey}
 }
 
 func (c *Handler) Start(_ context.Context) error {
@@ -46,13 +47,16 @@ func (c *Handler) Start(_ context.Context) error {
 	}()
 
 	logger.Info().Str("address", c.serverAddress).Msg("Starting server")
+	if c.cryptoKey != "" {
+		return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServeTLS(c.cryptoKey, c.cryptoKey))
+	}
 	return fmt.Errorf("server error %w, or server just stoped", c.server.ListenAndServe())
 }
 
 var mtsPool = sync.Pool{
 	New: func() any {
 		ml := make(entity.MetricsList, 0, 50)
-		return ml
+		return &ml
 	},
 }
 

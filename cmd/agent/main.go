@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	printInfo()
 	// Config
 	cfg := config.New()
 	logger.Init(cfg.Log.Level)

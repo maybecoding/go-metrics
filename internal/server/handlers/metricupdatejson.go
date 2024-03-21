@@ -45,7 +45,7 @@ func (c *Handler) metricUpdateJSON(w http.ResponseWriter, r *http.Request) {
 		logger.Debug().Str("ID", m.ID).Float64("Value", *m.Value).Msg("UpdateMetric JSON")
 	}
 
-	if err := c.metric.Set(m); err != nil {
+	if err = c.metric.Set(m); err != nil {
 		status, logMessage = http.StatusBadRequest, "failed to update metric in metric"
 		return
 	}

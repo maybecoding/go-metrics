@@ -8,10 +8,10 @@ import (
 type Fn func(ctx context.Context) error
 
 type Starter struct {
-	onRun      []Fn
-	onShutdown []Fn
 	g          *errgroup.Group
 	ctx        context.Context
+	onRun      []Fn
+	onShutdown []Fn
 }
 
 func New(ctx context.Context) *Starter {

@@ -14,12 +14,12 @@ func (c *Handler) metricUpdateAllJSON(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(status)
 	}()
 
-	mts := mtsPool.Get().(entity.MetricsList)
-	mtsForRead := mts[0:0]
-	err := easyjson.UnmarshalFromReader(r.Body, &mtsForRead)
-	defer mtsPool.Put(mts)
+	mtsReused := mtsPool.Get().(*entity.MetricsList)
+	mts := (*mtsReused)[0:0]
+	err := easyjson.UnmarshalFromReader(r.Body, &mts)
+	defer mtsPool.Put(mtsReused)
 
-	//decoder := json.NewDecoder(r.Body) Оптимизировано инкремент #16
+	//decoder := json.NewDecoder(r.Body) //Оптимизировано инкремент #16
 	//defer func() {
 	//	_ = r.Body.Close()
 	//}()
@@ -33,6 +33,7 @@ func (c *Handler) metricUpdateAllJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = c.metric.SetAll(mts)
+	//logger.Debug().Interface("metrics", mtsForRead).Msg("Set metrics")
 	if err != nil {
 		status = http.StatusInternalServerError
 		logger.Debug().Err(err).Msg("error due set all")

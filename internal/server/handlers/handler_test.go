@@ -16,8 +16,8 @@ import (
 )
 
 type want struct {
-	code      int
 	getResult string
+	code      int
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
@@ -26,7 +26,9 @@ func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.
 
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	respBody, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)

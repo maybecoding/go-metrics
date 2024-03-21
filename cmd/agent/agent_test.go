@@ -20,9 +20,9 @@ import (
 )
 
 type ServerRequest struct {
+	Err    error
 	Body   string
 	Method string
-	Err    error
 }
 
 func TestAgent(t *testing.T) {

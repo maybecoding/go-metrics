@@ -2,6 +2,8 @@ package sender
 
 import (
 	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
@@ -10,6 +12,7 @@ import (
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"github.com/maybecoding/go-metrics.git/pkg/zipper"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -49,6 +52,22 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 	}
 	// Создаем запрос
 	cl := resty.New()
+	if j.cfg.CryptoKey != "" {
+		var crt []byte
+		crt, err = os.ReadFile(j.cfg.CryptoKey)
+		if err != nil {
+			logger.Error().Err(err).Msg("error due read certificate")
+			return
+		}
+		roots := x509.NewCertPool()
+		ok := roots.AppendCertsFromPEM(crt)
+		if !ok {
+			logger.Error().Msg("error due append cert into roots")
+		}
+		cl.SetTLSClientConfig(&tls.Config{
+			RootCAs: roots,
+		})
+	}
 	cl.OnBeforeRequest(hasher.New(j.cfg.HashKey, sha256.New))
 	var resp *resty.Response
 	req := cl.R().
