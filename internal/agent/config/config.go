@@ -25,6 +25,7 @@ type (
 		Method           string
 		HashKey          string
 		EndpointTemplate string
+		CryptoKey        string
 		RetryIntervals   []time.Duration
 		NumWorkers       int
 	}
@@ -82,6 +83,12 @@ func New() *Config {
 		}
 	}
 
+	// Публичный ключ
+	cryptoKey := flag.String("crypto-key", "", "path to certificate")
+	if envCryptoKey := os.Getenv("CRYPTO_KEY"); envCryptoKey != "" {
+		cryptoKey = &envCryptoKey
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Fatal().Msg("undeclared flags provided")
@@ -95,10 +102,11 @@ func New() *Config {
 
 		Sender: Sender{
 			Server:           *servAddr,
-			EndpointTemplate: "http://%s/update/",
+			EndpointTemplate: "https://%s/update/",
 			RetryIntervals:   []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 			HashKey:          *key,
 			NumWorkers:       *numWorkers,
+			CryptoKey:        *cryptoKey,
 		},
 
 		Log: Log{
