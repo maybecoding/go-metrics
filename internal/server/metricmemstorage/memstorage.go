@@ -14,7 +14,7 @@ type MetricMemStorage struct {
 	dataGauge      map[string]float64
 	dataCounter    map[string]int64
 	dumper         *Dumper
-	backupInterval int64
+	backupInterval time.Duration
 	muGauge        sync.RWMutex
 	muCounter      sync.RWMutex
 }
@@ -72,7 +72,7 @@ func (mem *MetricMemStorage) GetAll() ([]*entity.Metrics, error) {
 	return mtr, nil
 }
 
-func NewMemStorage(d *Dumper, backupInterval int64, restoreOnUp bool) *MetricMemStorage {
+func NewMemStorage(d *Dumper, backupInterval time.Duration, restoreOnUp bool) *MetricMemStorage {
 	mem := &MetricMemStorage{
 		dataGauge:      make(map[string]float64),
 		dataCounter:    make(map[string]int64),
@@ -91,7 +91,7 @@ func (mem *MetricMemStorage) StartBackupTimer(ctx context.Context) error {
 	}
 	for {
 		select {
-		case <-time.After(time.Second * time.Duration(mem.backupInterval)):
+		case <-time.After(mem.backupInterval):
 			ms, err := mem.GetAll()
 			if err != nil {
 				logger.Error().Err(err).Msg("error due get metrics for save")

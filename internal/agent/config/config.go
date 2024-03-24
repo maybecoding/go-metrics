@@ -1,9 +1,9 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -16,8 +16,8 @@ type (
 		App    App
 	}
 	App struct {
-		CollectIntervalSec int
-		SendIntervalSec    int
+		CollectInterval time.Duration
+		SendInterval    time.Duration
 	}
 
 	Sender struct {
@@ -35,6 +35,13 @@ type (
 	}
 )
 
+type FileConfig struct {
+	Address        string `json:"address"`
+	ReportInterval string `json:"report_interval"`
+	PoolInterval   string `json:"pool_interval"`
+	CryptoKey      string `json:"crypto_key"`
+}
+
 func New() *Config {
 	// Адрес сервера
 	servAddr := flag.String("a", "localhost:8080", "HTTP server endpoint")
@@ -43,23 +50,15 @@ func New() *Config {
 	}
 
 	// Интервал отправки
-	repInter := flag.Int("r", 10, "metric report interval")
+	repInter := flag.String("r", "10s", "metric report interval")
 	if envRepInter := os.Getenv("REPORT_INTERVAL"); envRepInter != "" {
-		envRepInterInt, err := strconv.Atoi(envRepInter)
-		if err != nil {
-			log.Fatal("incorrect REPORT_INTERVAL env value")
-		}
-		repInter = &envRepInterInt
+		repInter = &envRepInter
 	}
 
 	// Интервал сборки
-	pollInter := flag.Int("p", 2, "metric poll interval")
+	pollInter := flag.String("p", "2s", "metric poll interval")
 	if envPollInter := os.Getenv("POLL_INTERVAL"); envPollInter != "" {
-		envPollInterInt, err := strconv.Atoi(envPollInter)
-		if err != nil {
-			log.Fatal("incorrect POLL_INTERVAL env value")
-		}
-		repInter = &envPollInterInt
+		repInter = &envPollInter
 	}
 
 	// Уровень логирования
@@ -89,20 +88,62 @@ func New() *Config {
 		cryptoKey = &envCryptoKey
 	}
 
+	// Файл конфигурации
+	var configFile string
+	flag.StringVar(&configFile, "c", "", "path to config file")
+	flag.StringVar(&configFile, "config", "", "path to config file")
+	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
+		configFile = envConfigFile
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
+	// Есть указан config-файл пытаемся получить config из него
+	if configFile != "" {
+		fCfgB, err := os.ReadFile(configFile)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("can't read config file")
+		}
+		var fCfg FileConfig
+		err = json.Unmarshal(fCfgB, &fCfg)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("can't parse config file")
+		}
+
+		if *servAddr == "" {
+			*servAddr = fCfg.Address
+		}
+		if *repInter == "" {
+			*repInter = fCfg.ReportInterval
+		}
+		if *pollInter == "" {
+			*pollInter = fCfg.PoolInterval
+		}
+		if *cryptoKey == "" {
+			*cryptoKey = fCfg.CryptoKey
+		}
+	}
+
+	pool, err := time.ParseDuration(*pollInter)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("can't parse pool interval")
+	}
+	rep, err := time.ParseDuration(*repInter)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("can't parse report interval")
+	}
 
 	cfg := &Config{
 		App: App{
-			CollectIntervalSec: *pollInter,
-			SendIntervalSec:    *repInter,
+			CollectInterval: pool,
+			SendInterval:    rep,
 		},
 
 		Sender: Sender{
 			Server:           *servAddr,
-			EndpointTemplate: "https://%s/update/",
+			EndpointTemplate: "%s://%s/update/",
 			RetryIntervals:   []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
 			HashKey:          *key,
 			NumWorkers:       *numWorkers,
@@ -113,17 +154,10 @@ func New() *Config {
 			Level: *logLevel,
 		},
 	}
-	//logger.Debug().Str("key", *key).Msg("agent configuration")
+	logger.Debug().Str("key", *key).Msg("agent configuration")
 	return cfg
 }
 
 func (cfg *Config) LogDebug() {
 	logger.Debug().Interface("cfg", cfg).Interface("args", os.Args).Msg("server configuration")
-}
-
-func (a App) CollectInterval() time.Duration {
-	return time.Duration(a.CollectIntervalSec) * time.Second
-}
-func (a App) SendInterval() time.Duration {
-	return time.Duration(a.SendIntervalSec) * time.Second
 }

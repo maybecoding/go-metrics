@@ -13,7 +13,7 @@ func getDefaultConfig() *Config {
 		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: "", CryptoKey: ""},
 		Log:    Log{Level: "debug"},
 		BackupStorage: BackupStorage{
-			Interval:      300,
+			Interval:      time.Second * 300,
 			Path:          "/tmp/metric-db.json",
 			IsRestoreOnUp: true,
 		},

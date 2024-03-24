@@ -24,7 +24,11 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 		logger.Error().Err(err).Msg("error due marshal all metrics before send")
 		return
 	}
-	endpoint := fmt.Sprintf(j.cfg.EndpointTemplate, j.cfg.Server)
+	protocol := "http"
+	if j.cfg.CryptoKey != "" {
+		protocol += "s"
+	}
+	endpoint := fmt.Sprintf(j.cfg.EndpointTemplate, protocol, j.cfg.Server)
 	logger.Debug().Str("endpoint", endpoint).Msg("Endpoint")
 	logger.Debug().Str("metric", string(rd)).Str("endpoint", endpoint).Msg("trying to send metric")
 
