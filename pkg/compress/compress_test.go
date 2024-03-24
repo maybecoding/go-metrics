@@ -14,8 +14,8 @@ func TestHandlerReader(t *testing.T) {
 
 	type Req struct {
 		body           string
-		mustZipped     bool
 		headerEncoding string
+		mustZipped     bool
 	}
 
 	type Resp struct {
@@ -29,18 +29,18 @@ func TestHandlerReader(t *testing.T) {
 	}{
 		{
 			name: "#1 Ordinary",
-			req:  Req{"Some body", false, "-"},
-			resp: Resp{"", http.StatusOK},
+			req:  Req{body: "Some body", mustZipped: false, headerEncoding: "-"},
+			resp: Resp{body: "", code: http.StatusOK},
 		},
 		{
 			name: "#2 GZIPed",
-			req:  Req{"Some body", true, "gzip"},
-			resp: Resp{"", http.StatusOK},
+			req:  Req{body: "Some body", mustZipped: true, headerEncoding: "gzip"},
+			resp: Resp{body: "", code: http.StatusOK},
 		},
 		{
 			name: "#3 no data",
-			req:  Req{"", true, "gzip"},
-			resp: Resp{"", http.StatusInternalServerError},
+			req:  Req{body: "", mustZipped: true, headerEncoding: "gzip"},
+			resp: Resp{body: "", code: http.StatusInternalServerError},
 		},
 	}
 	for _, test := range tests {
@@ -105,40 +105,40 @@ func sendResponse(t *testing.T, response []byte) http.HandlerFunc {
 func TestHandlerFuncWriter(t *testing.T) {
 	type Req struct {
 		body                 string
-		mustZipped           bool
 		headerAcceptEncoding string
+		mustZipped           bool
 		compressLevel        int
 	}
 
 	type Resp struct {
 		body            string
-		code            int
 		contentEncoding string
+		code            int
 	}
 	tests := []struct {
 		name string
-		req  Req
 		resp Resp
+		req  Req
 	}{
 		{
 			name: "#1 No zip required",
-			req:  Req{"Some body", false, "-", 0},
-			resp: Resp{"", http.StatusOK, ""},
+			req:  Req{body: "Some body", mustZipped: false, headerAcceptEncoding: "-", compressLevel: 0},
+			resp: Resp{body: "", code: http.StatusOK, contentEncoding: ""},
 		},
 		{
 			name: "#2 Zipping",
-			req:  Req{"Some body", true, "gzip", 0},
-			resp: Resp{"", http.StatusOK, "gzip"},
+			req:  Req{body: "Some body", mustZipped: true, headerAcceptEncoding: "gzip", compressLevel: 0},
+			resp: Resp{body: "", code: http.StatusOK, contentEncoding: "gzip"},
 		},
 		{
 			name: "#3 with compress level",
-			req:  Req{"Some body", true, "gzip", 2},
-			resp: Resp{"", http.StatusOK, "gzip"},
+			req:  Req{body: "Some body", mustZipped: true, headerAcceptEncoding: "gzip", compressLevel: 2},
+			resp: Resp{body: "", code: http.StatusOK, contentEncoding: "gzip"},
 		},
 		{
 			name: "#4 with wrong compress level",
-			req:  Req{"Some body", true, "gzip", 100},
-			resp: Resp{"", http.StatusOK, "gzip"},
+			req:  Req{body: "Some body", mustZipped: true, headerAcceptEncoding: "gzip", compressLevel: 100},
+			resp: Resp{body: "", code: http.StatusOK, contentEncoding: "gzip"},
 		},
 	}
 	for _, test := range tests {

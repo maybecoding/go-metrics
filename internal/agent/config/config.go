@@ -11,9 +11,9 @@ import (
 
 type (
 	Config struct {
-		App    App
-		Sender Sender `json:"sender"`
 		Log    Log
+		Sender Sender `json:"sender"`
+		App    App
 	}
 	App struct {
 		CollectIntervalSec int

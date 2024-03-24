@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	printInfo()
 	// Получаем конфигурацию приложения
 	cfg := config.NewConfig()
 	sapp.New(cfg).
