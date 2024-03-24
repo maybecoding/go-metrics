@@ -9,13 +9,12 @@ import (
 )
 
 type Collector struct {
+	memStats     *runtime.MemStats
+	ctx          context.Context
 	gaugeMetrics map[string]float64
+	muGauge      sync.RWMutex
+	muCounter    sync.RWMutex
 	pollCount    int64
-
-	memStats  *runtime.MemStats
-	ctx       context.Context
-	muGauge   sync.RWMutex
-	muCounter sync.RWMutex
 }
 
 func New(ctx context.Context) *Collector {

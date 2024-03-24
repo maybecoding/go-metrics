@@ -2,10 +2,10 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -22,6 +22,7 @@ type (
 		Address      string
 		PprofAddress string
 		HashKey      string
+		CryptoKey    string
 	}
 	// Log - struct for log config
 	Log struct {
@@ -29,8 +30,8 @@ type (
 	}
 	// BackupStorage - struct for backup functionality config
 	BackupStorage struct {
-		Interval      int64
 		Path          string
+		Interval      time.Duration
 		IsRestoreOnUp bool
 	}
 	// Database - struct for db config
@@ -40,6 +41,15 @@ type (
 		RunMigrations  bool
 	}
 )
+
+type FileConfig struct {
+	Address       string `json:"address"`
+	StoreInterval string `json:"store_interval"`
+	StoreFile     string `json:"store_file"`
+	DatabaseDSN   string `json:"database_dsn"`
+	CryptoKey     string `json:"crypto_key"`
+	Restore       bool   `json:"restore"`
+}
 
 // NewConfig - constructor for config structures, reads params from flags and env, env overrides flags
 func NewConfig() *Config {
@@ -54,13 +64,9 @@ func NewConfig() *Config {
 		logLevel = &envLogLevel
 	}
 	// storeInterval
-	storeIntervalSec := flag.Int64("i", 300, "metric backup interval in sec. Default 300 sec")
+	storeInterval := flag.String("i", "300s", "metric backup interval in sec. Default 300 sec")
 	if envStoreIntervalSec := os.Getenv("STORE_INTERVAL"); envStoreIntervalSec != "" {
-		parsed, err := strconv.ParseInt(envStoreIntervalSec, 10, 64)
-		if err != nil {
-			logger.Fatal().Err(err).Msg("can't parse int from STORE_INTERVAL in env")
-		}
-		storeIntervalSec = &parsed
+		storeInterval = &envStoreIntervalSec
 	}
 
 	// fileStoragePath
@@ -92,15 +98,66 @@ func NewConfig() *Config {
 		key = &envKey
 	}
 
+	cryptoKey := flag.String("crypto-key", "", "path to certificate")
+	if envCryptoKey := os.Getenv("CRYPTO_KEY"); envCryptoKey != "" {
+		cryptoKey = &envCryptoKey
+	}
+
 	flag.Parse()
 	if len(flag.Args()) > 0 {
 		logger.Fatal().Msg("undeclared flags provided")
 	}
+
+	// Файл конфигурации
+	var configFile string
+	flag.StringVar(&configFile, "c", "", "path to config file")
+	flag.StringVar(&configFile, "config", "", "path to config file")
+	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
+		configFile = envConfigFile
+	}
+
+	// Есть указан config-файл пытаемся получить config из него
+	if configFile != "" {
+		fCfgB, err := os.ReadFile(configFile)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("can't read config file")
+		}
+		var fCfg FileConfig
+		err = json.Unmarshal(fCfgB, &fCfg)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("can't parse config file")
+		}
+
+		if *serverAddress == "" {
+			*serverAddress = fCfg.Address
+		}
+		if !*isRestoreOnUp && fCfg.Restore {
+			*isRestoreOnUp = fCfg.Restore
+		}
+		if *storeInterval == "" {
+			*storeInterval = fCfg.StoreInterval
+		}
+		if *fileStoragePath == "" {
+			*fileStoragePath = fCfg.StoreFile
+		}
+		if *databaseConnStr == "" {
+			*databaseConnStr = fCfg.DatabaseDSN
+		}
+		if *cryptoKey == "" {
+			*cryptoKey = fCfg.CryptoKey
+		}
+	}
+
+	storeDur, err := time.ParseDuration(*storeInterval)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("can't parse pool interval")
+	}
+
 	cfg := &Config{
-		Server: Server{Address: *serverAddress, PprofAddress: "localhost:8090", HashKey: *key},
+		Server: Server{Address: *serverAddress, PprofAddress: "localhost:8090", HashKey: *key, CryptoKey: *cryptoKey},
 		Log:    Log{Level: *logLevel},
 		BackupStorage: BackupStorage{
-			Interval:      *storeIntervalSec,
+			Interval:      storeDur,
 			Path:          *fileStoragePath,
 			IsRestoreOnUp: *isRestoreOnUp,
 		},

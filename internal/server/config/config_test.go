@@ -10,10 +10,10 @@ import (
 
 func getDefaultConfig() *Config {
 	return &Config{
-		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: ""},
+		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: "", CryptoKey: ""},
 		Log:    Log{Level: "debug"},
 		BackupStorage: BackupStorage{
-			Interval:      300,
+			Interval:      time.Second * 300,
 			Path:          "/tmp/metric-db.json",
 			IsRestoreOnUp: true,
 		},
@@ -30,20 +30,23 @@ func TestConfig(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		agrs     []string
 		env      map[string]string
 		mutation func(config *Config)
+		args     []string
 	}{
-		{"#2 some flags", []string{"main", "-a", ":8080", "-d", "wrong database"}, map[string]string{"DATABASE_DSN": "database"}, func(cfg *Config) {
-			cfg.Server.Address = ":8080"
-			cfg.Database.ConnStr = "database"
-		}},
+		{name: "#2 some flags",
+			args: []string{"main", "-a", ":8080", "-d", "wrong database"},
+			env:  map[string]string{"DATABASE_DSN": "database"},
+			mutation: func(cfg *Config) {
+				cfg.Server.Address = ":8080"
+				cfg.Database.ConnStr = "database"
+			}},
 	}
 
 	for _, tt := range tests {
 		println("before check")
 		t.Run(tt.name, func(t *testing.T) {
-			check(t, tt.agrs, tt.env, tt.mutation)
+			check(t, tt.args, tt.env, tt.mutation)
 		})
 
 	}
