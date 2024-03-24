@@ -62,12 +62,26 @@ func Example_metricUpdateAllJSON() {
 	fmt.Println("status", respSendAll.StatusCode)
 	fmt.Println("-------------------------------")
 
+	bufErr := bytes.NewBuffer([]byte("incorrect json"))
+	reqSendAllErr, err := http.NewRequest("POST", ts.URL+"/updates/", bufErr)
+	fmt.Println("err4", err)
+	// Set header
+	reqSendAllErr.Header.Set("Content-Type", "application/json")
+	// Send using test client
+	respSendAllErr, err := ts.Client().Do(reqSendAllErr)
+	fmt.Println("err3", err, "status code", respSendAllErr.StatusCode)
+	_ = respSendAllErr.Body.Close()
+	fmt.Println("-------------------------------")
+
 	// Output:
 	//send batch of messages /updates/
 	//err1 <nil>
 	//err2 <nil>
 	//err3 <nil>
 	//status 200
+	//-------------------------------
+	//err4 <nil>
+	//err3 <nil> status code 400
 	//-------------------------------
 }
 func Example_metricUpdate() {

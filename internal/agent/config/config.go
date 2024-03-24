@@ -58,7 +58,7 @@ func New() *Config {
 	// Интервал сборки
 	pollInter := flag.String("p", "2s", "metric poll interval")
 	if envPollInter := os.Getenv("POLL_INTERVAL"); envPollInter != "" {
-		repInter = &envPollInter
+		pollInter = &envPollInter
 	}
 
 	// Уровень логирования
@@ -77,7 +77,7 @@ func New() *Config {
 	numWorkers := flag.Int("l", 1, "num workers for send metrics")
 	if envNumWorkers := os.Getenv("RATE_LIMIT"); envNumWorkers != "" {
 		num, err := strconv.Atoi(envNumWorkers)
-		if err != nil {
+		if err == nil {
 			numWorkers = &num
 		}
 	}
