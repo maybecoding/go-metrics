@@ -176,8 +176,6 @@ func TestHandlerFuncWriter(t *testing.T) {
 	}
 }
 
-type transform func(*testing.T, []byte) []byte
-
 func unzip(t *testing.T, source []byte) []byte {
 	zr, err := gzip.NewReader(bytes.NewReader(source))
 	require.NoError(t, err)

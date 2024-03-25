@@ -16,12 +16,12 @@ func BenchmarkMain(b *testing.B) {
 
 	cfg := &config.Config{
 		App: config.App{
-			CollectIntervalSec: 0,
-			SendIntervalSec:    0,
+			CollectInterval: 0,
+			SendInterval:    0,
 		},
 		Sender: config.Sender{
 			Server:           "localhost:9099",
-			EndpointTemplate: "http://%s/update/",
+			EndpointTemplate: "%s://%s/update/",
 			RetryIntervals:   []time.Duration{time.Millisecond, 3 * time.Millisecond, 5 * time.Millisecond},
 			HashKey:          "key",
 			NumWorkers:       10,
@@ -37,7 +37,7 @@ func BenchmarkMain(b *testing.B) {
 	var collect app.Collector = collector.New(ctx)
 	var snd app.Sender = sender.New(ctx, cfg.Sender)
 
-	a := app.New(collect, snd, cfg.App.CollectInterval(), cfg.App.SendInterval())
+	a := app.New(collect, snd, cfg.App.CollectInterval, cfg.App.SendInterval)
 
 	a.Run()
 }

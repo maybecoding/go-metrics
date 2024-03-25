@@ -23,7 +23,7 @@ func main() {
 	var collect app.Collector = collector.New(ctx)
 	var snd app.Sender = sender.New(ctx, cfg.Sender)
 
-	a := app.New(collect, snd, cfg.App.CollectInterval(), cfg.App.SendInterval())
+	a := app.New(collect, snd, cfg.App.CollectInterval, cfg.App.SendInterval)
 
 	a.Run()
 

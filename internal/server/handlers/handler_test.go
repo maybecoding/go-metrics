@@ -57,6 +57,7 @@ func TestController(t *testing.T) {
 		{name: "#6 Gauge get", url: "/value/gauge/Test", method: "GET", want: want{code: 200, getResult: "913372.185"}},
 		{name: "#6.1 Gauge get", url: "/value/gauge/Test2", method: "GET", want: want{code: 200, getResult: "330095.942"}},
 		{name: "#7 Counter get", url: "/value/counter/TestTestTestTestTest", method: "GET", want: want{code: 200, getResult: "312323"}},
+		{name: "#8 Undefined counter get", url: "/value/counter/Undefined", method: "GET", want: want{code: 404}},
 	}
 
 	dumper := metricmemstorage.NewDumper("")
