@@ -2,36 +2,41 @@ package config
 
 import (
 	"encoding/json"
-	"flag"
+	"fmt"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/vscfg"
 	"os"
-	"strconv"
+	"reflect"
 	"time"
 )
 
 type (
 	Config struct {
-		Log    Log
-		Sender Sender `json:"sender"`
-		App    App
+		Log     Log
+		Sender  Sender `json:"sender"`
+		App     App
+		CfgFile CfgFile
 	}
 	App struct {
-		CollectInterval time.Duration
-		SendInterval    time.Duration
+		CollectInterval time.Duration `default:"2s" flg:"p" flgU:"metric poll interval" env:"POLL_INTERVAL"`
+		SendInterval    time.Duration `default:"10s" flg:"r" flgU:"metric report interval" env:"REPORT_INTERVAL"`
 	}
 
 	Sender struct {
-		Server           string `json:"address"`
+		Server           string `default:"localhost:8080" flg:"a" flgU:"HTTP server endpoint" env:"ADDRESS"`
 		Method           string
-		HashKey          string
-		EndpointTemplate string
-		CryptoKey        string
-		RetryIntervals   []time.Duration
-		NumWorkers       int
+		HashKey          string          `flg:"k" flgU:"hash key" env:"KEY"`
+		EndpointTemplate string          `default:"%s://%s/update/"`
+		CryptoKey        string          `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
+		RetryIntervals   []time.Duration `default:"1s,3s,5s"`
+		NumWorkers       int             `default:"1" flg:"l" flgU:"num workers for send metrics" env:"RATE_LIMIT"`
 	}
 
 	Log struct {
-		Level string
+		Level string `default:"debug" flg:"z" flgU:"log level eg.: debug, error, fatal" env:"LOG_LEVEl"`
+	}
+	CfgFile struct {
+		Path string `flg:"c,config" flgU:"path to config file"  env:"CONFIG"`
 	}
 )
 
@@ -42,67 +47,25 @@ type FileConfig struct {
 	CryptoKey      string `json:"crypto_key"`
 }
 
-func New() *Config {
-	// Адрес сервера
-	servAddr := flag.String("a", "localhost:8080", "HTTP server endpoint")
-	if envServAddr := os.Getenv("ADDRESS"); envServAddr != "" {
-		servAddr = &envServAddr
-	}
+func New() (*Config, error) {
+	cfg := new(Config)
+	rCfg := reflect.ValueOf(cfg).Elem()
+	// Заполняем значениями по умолчанию, флагами и env
+	var fns []vscfg.Fn
+	fns = append(fns, vscfg.Tag("default"))
+	fns = append(fns, vscfg.Flag("flg", "flgU")...)
+	fns = append(fns, vscfg.Env("env"))
+	err := vscfg.FillByTags(rCfg, fns...)
 
-	// Интервал отправки
-	repInter := flag.String("r", "10s", "metric report interval")
-	if envRepInter := os.Getenv("REPORT_INTERVAL"); envRepInter != "" {
-		repInter = &envRepInter
-	}
-
-	// Интервал сборки
-	pollInter := flag.String("p", "2s", "metric poll interval")
-	if envPollInter := os.Getenv("POLL_INTERVAL"); envPollInter != "" {
-		pollInter = &envPollInter
-	}
-
-	// Уровень логирования
-	logLevel := flag.String("z", "debug", "lg level eg.: debug, error, fatal")
-	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
-		logLevel = &envLogLevel
-	}
-
-	// Ключ хеширования
-	key := flag.String("k", "", "hash key")
-	if envKey := os.Getenv("KEY"); envKey != "" {
-		key = &envKey
-	}
-
-	// Число одновременных отправок метрик
-	numWorkers := flag.Int("l", 1, "num workers for send metrics")
-	if envNumWorkers := os.Getenv("RATE_LIMIT"); envNumWorkers != "" {
-		num, err := strconv.Atoi(envNumWorkers)
-		if err == nil {
-			numWorkers = &num
-		}
-	}
-
-	// Публичный ключ
-	cryptoKey := flag.String("crypto-key", "", "path to certificate")
-	if envCryptoKey := os.Getenv("CRYPTO_KEY"); envCryptoKey != "" {
-		cryptoKey = &envCryptoKey
-	}
-
-	// Файл конфигурации
-	var configFile string
-	flag.StringVar(&configFile, "c", "", "path to config file")
-	flag.StringVar(&configFile, "config", "", "path to config file")
-	if envConfigFile := os.Getenv("CONFIG"); envConfigFile != "" {
-		configFile = envConfigFile
-	}
-
-	flag.Parse()
-	if len(flag.Args()) > 0 {
-		logger.Fatal().Msg("undeclared flags provided")
+	if err != nil {
+		return nil, fmt.Errorf("config - New - vscfg.FillByTags: %w", err)
 	}
 	// Есть указан config-файл пытаемся получить config из него
-	if configFile != "" {
-		fCfgB, err := os.ReadFile(configFile)
+	// Поскольку этот файл сбоку-припеку и не вписывается в общую модель получения конфигурации заполняем значениями
+	// только если они не проставлены ранее.
+	// Есть мысли как и это в будущем включить в модель, но структура должна совпадать со структурой используемой конфигурации
+	if cfg.CfgFile.Path != "" {
+		fCfgB, err := os.ReadFile(cfg.CfgFile.Path)
 		if err != nil {
 			logger.Fatal().Err(err).Msg("can't read config file")
 		}
@@ -111,51 +74,28 @@ func New() *Config {
 		if err != nil {
 			logger.Fatal().Err(err).Msg("can't parse config file")
 		}
-
-		if *servAddr == "" {
-			*servAddr = fCfg.Address
+		if cfg.Sender.Server == "" {
+			cfg.Sender.Server = fCfg.Address
 		}
-		if *repInter == "" {
-			*repInter = fCfg.ReportInterval
+		if cfg.App.SendInterval == 0 {
+			rep, err := time.ParseDuration(fCfg.ReportInterval)
+			if err != nil {
+				logger.Fatal().Err(err).Msg("can't parse report interval")
+			}
+			cfg.App.SendInterval = rep
 		}
-		if *pollInter == "" {
-			*pollInter = fCfg.PoolInterval
+		if cfg.App.SendInterval == 0 {
+			pool, err := time.ParseDuration(fCfg.PoolInterval)
+			if err != nil {
+				logger.Fatal().Err(err).Msg("can't parse pool interval")
+			}
+			cfg.App.SendInterval = pool
 		}
-		if *cryptoKey == "" {
-			*cryptoKey = fCfg.CryptoKey
+		if cfg.Sender.CryptoKey == "" {
+			cfg.Sender.CryptoKey = fCfg.CryptoKey
 		}
 	}
-
-	pool, err := time.ParseDuration(*pollInter)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("can't parse pool interval")
-	}
-	rep, err := time.ParseDuration(*repInter)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("can't parse report interval")
-	}
-
-	cfg := &Config{
-		App: App{
-			CollectInterval: pool,
-			SendInterval:    rep,
-		},
-
-		Sender: Sender{
-			Server:           *servAddr,
-			EndpointTemplate: "%s://%s/update/",
-			RetryIntervals:   []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
-			HashKey:          *key,
-			NumWorkers:       *numWorkers,
-			CryptoKey:        *cryptoKey,
-		},
-
-		Log: Log{
-			Level: *logLevel,
-		},
-	}
-	logger.Debug().Str("key", *key).Msg("agent configuration")
-	return cfg
+	return cfg, nil
 }
 
 func (cfg *Config) LogDebug() {

@@ -75,10 +75,11 @@ func TestConfig(t *testing.T) {
 func check(t *testing.T, args []string, env map[string]string, mutation func(config *Config), cfgFile string) {
 
 	// Задаем файл с логами
+	var cfgPath string
 	if cfgFile != "" {
 		dir, err := os.MkdirTemp("", "tmp")
 		require.NoError(t, err)
-		cfgPath := path.Join(dir, "cfg.json")
+		cfgPath = path.Join(dir, "cfg.json")
 		err = os.WriteFile(cfgPath, []byte(cfgFile), 0666)
 		require.NoError(t, err)
 
@@ -112,8 +113,10 @@ func check(t *testing.T, args []string, env map[string]string, mutation func(con
 		}
 	}()
 
-	cfg := New()
+	cfg, err := New()
+	require.NoError(t, err)
 	cfgExpected := getDefaultConfig()
+	cfgExpected.CfgFile.Path = cfgPath
 	mutation(cfgExpected)
 
 	require.Equal(t, cfgExpected, cfg)
