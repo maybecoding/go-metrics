@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/internal/agent/collector"
 	"github.com/maybecoding/go-metrics.git/internal/agent/config"
@@ -14,7 +15,11 @@ import (
 func main() {
 	printInfo()
 	// Config
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		fmt.Printf("failed to parse config: %s\n", err.Error())
+		return
+	}
 	logger.Init(cfg.Log.Level)
 	cfg.LogDebug()
 
@@ -23,7 +28,7 @@ func main() {
 	var collect app.Collector = collector.New(ctx)
 	var snd app.Sender = sender.New(ctx, cfg.Sender)
 
-	a := app.New(collect, snd, cfg.App.CollectInterval(), cfg.App.SendInterval())
+	a := app.New(collect, snd, cfg.App.CollectInterval, cfg.App.SendInterval)
 
 	a.Run()
 

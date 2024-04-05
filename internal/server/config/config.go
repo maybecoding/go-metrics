@@ -2,10 +2,12 @@
 package config
 
 import (
-	"flag"
+	"encoding/json"
+	"fmt"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"github.com/maybecoding/go-metrics.git/pkg/vscfg"
 	"os"
-	"strconv"
+	"reflect"
 	"time"
 )
 
@@ -16,102 +18,98 @@ type (
 		Log           Log
 		BackupStorage BackupStorage
 		Database      Database
+		CfgFile       CfgFile
 	}
 	// Server - struct for server config
 	Server struct {
-		Address      string
-		PprofAddress string
-		HashKey      string
+		Address      string `default:"localhost:8080" flg:"a" flgU:"Endpoint HTTP-server address" env:"ADDRESS"`
+		PprofAddress string `default:"localhost:8090"`
+		HashKey      string `flg:"k" flgU:"hash key" env:"KEY"`
+		CryptoKey    string `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
 	}
 	// Log - struct for log config
 	Log struct {
-		Level string
+		Level string `default:"debug" flg:"l" flgU:"lg level eg.: debug, error, fatal" env:"LOG_LEVEl"`
 	}
 	// BackupStorage - struct for backup functionality config
 	BackupStorage struct {
-		Path          string
-		Interval      int64
-		IsRestoreOnUp bool
+		Path          string        `default:"/tmp/metric-db.json" flg:"f" flgU:"Storage file path" env:"FILE_STORAGE_PATH"`
+		Interval      time.Duration `default:"300s" flg:"i" flgU:"metric backup interval in sec. Default 300 sec" env:"STORE_INTERVAL"`
+		IsRestoreOnUp bool          `default:"true" flg:"r" flgU:"Restore data on up" env:"RESTORE"`
 	}
 	// Database - struct for db config
-	Database struct {
-		ConnStr        string
-		RetryIntervals []time.Duration
-		RunMigrations  bool
+	Database struct { // postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable
+		ConnStr        string          `flg:"d" flgU:"postgres database connection string, if empty - using memory" env:"DATABASE_DSN"`
+		RetryIntervals []time.Duration `default:"1s,3s,5s"`
+		RunMigrations  bool            `default:"true"`
+	}
+	CfgFile struct {
+		Path string `flg:"c,config" flgU:"path to config file"  env:"CONFIG"`
 	}
 )
 
+type FileConfig struct {
+	Address       string `json:"address"`
+	StoreInterval string `json:"store_interval"`
+	StoreFile     string `json:"store_file"`
+	DatabaseDSN   string `json:"database_dsn"`
+	CryptoKey     string `json:"crypto_key"`
+	Restore       bool   `json:"restore"`
+}
+
 // NewConfig - constructor for config structures, reads params from flags and env, env overrides flags
-func NewConfig() *Config {
-	// serverAddress
-	serverAddress := flag.String("a", "localhost:8080", "Endpoint HTTP-server address")
-	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
-		serverAddress = &envServerAddress
+func NewConfig() (*Config, error) {
+	cfg := new(Config)
+	rCfg := reflect.ValueOf(cfg).Elem()
+	// Заполняем значениями по умолчанию, флагами и env
+	var fns []vscfg.Fn
+	fns = append(fns, vscfg.Tag("default"))
+	fns = append(fns, vscfg.Flag("flg", "flgU")...)
+	fns = append(fns, vscfg.Env("env"))
+	err := vscfg.FillByTags(rCfg, fns...)
+
+	if err != nil {
+		return nil, fmt.Errorf("config - New - vscfg.FillByTags: %w", err)
 	}
-	// logLevel
-	logLevel := flag.String("l", "debug", "lg level eg.: debug, error, fatal")
-	if envLogLevel := os.Getenv("LOG_LEVEl"); envLogLevel != "" {
-		logLevel = &envLogLevel
-	}
-	// storeInterval
-	storeIntervalSec := flag.Int64("i", 300, "metric backup interval in sec. Default 300 sec")
-	if envStoreIntervalSec := os.Getenv("STORE_INTERVAL"); envStoreIntervalSec != "" {
-		parsed, err := strconv.ParseInt(envStoreIntervalSec, 10, 64)
+	// Есть указан config-файл пытаемся получить config из него
+	// Поскольку этот файл сбоку-припеку и не вписывается в общую модель получения конфигурации заполняем значениями
+	// только если они не проставлены ранее.
+	// Есть мысли как и это в будущем включить в модель, но структура должна совпадать со структурой используемой конфигурации
+	if cfg.CfgFile.Path != "" {
+		fCfgB, err := os.ReadFile(cfg.CfgFile.Path)
 		if err != nil {
-			logger.Fatal().Err(err).Msg("can't parse int from STORE_INTERVAL in env")
+			logger.Fatal().Err(err).Msg("can't read config file")
 		}
-		storeIntervalSec = &parsed
-	}
-
-	// fileStoragePath
-	fileStoragePath := flag.String("f", "/tmp/metric-db.json", "Storage file path")
-	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
-		fileStoragePath = &envFileStoragePath
-	}
-
-	// isRestoreOnUp
-	isRestoreOnUp := flag.Bool("r", true, "Restore data on up")
-	if envIsRestoreOnUp := os.Getenv("RESTORE"); envIsRestoreOnUp != "" {
-		var envIsRestoreOnUpBool bool
-		if envIsRestoreOnUp == "true" {
-			envIsRestoreOnUpBool = true
+		var fCfg FileConfig
+		err = json.Unmarshal(fCfgB, &fCfg)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("can't parse config file")
 		}
-		isRestoreOnUp = &envIsRestoreOnUpBool
-	}
 
-	// databaseConnStr
-	//databaseConnStr := flag.String("d", "postgres://postgres:postgres@postgres:5432/praktikum?sslmode=disable", "postgres database connection string, if empty - using")
-	databaseConnStr := flag.String("d", "", "postgres database connection string, if empty - using")
-	if envDatabaseConnStr := os.Getenv("DATABASE_DSN"); envDatabaseConnStr != "" {
-		databaseConnStr = &envDatabaseConnStr
+		if cfg.Server.Address == "" {
+			cfg.Server.Address = fCfg.Address
+		}
+		if !cfg.BackupStorage.IsRestoreOnUp && fCfg.Restore {
+			cfg.BackupStorage.IsRestoreOnUp = fCfg.Restore
+		}
+		if cfg.BackupStorage.Interval == 0 {
+			storeDur, err := time.ParseDuration(fCfg.StoreInterval)
+			if err != nil {
+				return nil, err
+			}
+			cfg.BackupStorage.Interval = storeDur
+		}
+		if cfg.BackupStorage.Path == "" {
+			cfg.BackupStorage.Path = fCfg.StoreFile
+		}
+		if cfg.Database.ConnStr == "" {
+			cfg.Database.ConnStr = fCfg.DatabaseDSN
+		}
+		if cfg.Server.CryptoKey == "" {
+			cfg.Server.CryptoKey = fCfg.CryptoKey
+		}
 	}
-
-	// Ключ хеширования
-	key := flag.String("k", "", "hash key")
-	if envKey := os.Getenv("KEY"); envKey != "" {
-		key = &envKey
-	}
-
-	flag.Parse()
-	if len(flag.Args()) > 0 {
-		logger.Fatal().Msg("undeclared flags provided")
-	}
-	cfg := &Config{
-		Server: Server{Address: *serverAddress, PprofAddress: "localhost:8090", HashKey: *key},
-		Log:    Log{Level: *logLevel},
-		BackupStorage: BackupStorage{
-			Interval:      *storeIntervalSec,
-			Path:          *fileStoragePath,
-			IsRestoreOnUp: *isRestoreOnUp,
-		},
-		Database: Database{
-			ConnStr:        *databaseConnStr,
-			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
-			RunMigrations:  true,
-		},
-	}
-
-	return cfg
+	return cfg, nil
 }
 
 func (d Database) Use() bool {

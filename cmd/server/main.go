@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	sapp "github.com/maybecoding/go-metrics.git/internal/server/app"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 )
@@ -8,7 +9,11 @@ import (
 func main() {
 	printInfo()
 	// Получаем конфигурацию приложения
-	cfg := config.NewConfig()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		fmt.Printf("failed to parse config: %s", err.Error())
+		return
+	}
 	sapp.New(cfg).
 		Init().
 		InitHandler().

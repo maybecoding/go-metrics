@@ -11,21 +11,25 @@ import (
 
 func getDefaultConfig() *Config {
 	return &Config{
-		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: "", CryptoKey: ""},
-		Log:    Log{Level: "debug"},
-		BackupStorage: BackupStorage{
-			Interval:      time.Second * 300,
-			Path:          "/tmp/metric-db.json",
-			IsRestoreOnUp: true,
+		App: App{
+			CollectInterval: 2 * time.Second,
+			SendInterval:    10 * time.Second,
 		},
-		Database: Database{
-			ConnStr:        "",
-			RetryIntervals: []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
-			RunMigrations:  true,
+
+		Sender: Sender{
+			Server:           "localhost:8080",
+			EndpointTemplate: "%s://%s/update/",
+			RetryIntervals:   []time.Duration{time.Second, 3 * time.Second, 5 * time.Second},
+			HashKey:          "",
+			NumWorkers:       1,
+			CryptoKey:        "",
+		},
+
+		Log: Log{
+			Level: "debug",
 		},
 	}
 }
-
 func TestConfig(t *testing.T) {
 	logger.Init("debug")
 
@@ -37,9 +41,10 @@ func TestConfig(t *testing.T) {
 		args     []string
 	}{
 		{name: "#2 some flags",
-			args: []string{"main", "-a", ":8080", "-d", "wrong database"},
-			env: map[string]string{"DATABASE_DSN": "database", "LOG_LEVEl": "fatal", "STORE_INTERVAL": "100m",
-				"RESTORE": "true", "KEY": "key", "FILE_STORAGE_PATH": "/tmp/tmp.tmp"},
+			args: []string{"main", "-a", ":8080", "-z", "wrong"},
+			env: map[string]string{"LOG_LEVEl": "fatal", "REPORT_INTERVAL": "1000m", "POLL_INTERVAL": "3h",
+				"KEY": "key", "RATE_LIMIT": "100",
+			},
 			cfgFile: `{
     "address": "localhost:8080",
     "restore": true,
@@ -47,16 +52,15 @@ func TestConfig(t *testing.T) {
     "store_file": "/path/to/file.db",
     "database_dsn": "",
     "crypto_key": "/path/to/key.pem"
-}`,
+} `,
 			mutation: func(cfg *Config) {
-				cfg.Server.Address = ":8080"
-				cfg.Database.ConnStr = "database"
-				cfg.Server.CryptoKey = "/path/to/key.pem"
+				cfg.Sender.Server = ":8080"
 				cfg.Log.Level = "fatal"
-				cfg.BackupStorage.Interval = 100 * time.Minute
-				cfg.BackupStorage.IsRestoreOnUp = true
-				cfg.Server.HashKey = "key"
-				cfg.BackupStorage.Path = "/tmp/tmp.tmp"
+				cfg.Sender.CryptoKey = "/path/to/key.pem"
+				cfg.App.SendInterval = 1000 * time.Minute
+				cfg.App.CollectInterval = 3 * time.Hour
+				cfg.Sender.HashKey = "key"
+				cfg.Sender.NumWorkers = 100
 			}},
 	}
 
@@ -69,6 +73,7 @@ func TestConfig(t *testing.T) {
 	}
 }
 func check(t *testing.T, args []string, env map[string]string, mutation func(config *Config), cfgFile string) {
+
 	// Задаем файл с логами
 	var cfgPath string
 	if cfgFile != "" {
@@ -108,17 +113,12 @@ func check(t *testing.T, args []string, env map[string]string, mutation func(con
 		}
 	}()
 
-	cfg, err := NewConfig()
+	cfg, err := New()
 	require.NoError(t, err)
 	cfgExpected := getDefaultConfig()
 	cfgExpected.CfgFile.Path = cfgPath
 	mutation(cfgExpected)
 
 	require.Equal(t, cfgExpected, cfg)
-
-	if _, ok := env["DATABASE_DSN"]; ok {
-		require.Equal(t, true, cfg.Database.Use())
-	}
-
 	println("done check")
 }
