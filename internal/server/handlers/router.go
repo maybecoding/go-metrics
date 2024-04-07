@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/sha256"
 	"github.com/go-chi/chi/v5"
+	"github.com/maybecoding/go-metrics.git/internal/server/handlers/middleware"
 	"github.com/maybecoding/go-metrics.git/pkg/compress"
 	"github.com/maybecoding/go-metrics.git/pkg/hashcheck"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
@@ -15,8 +16,11 @@ func (c *Handler) GetRouter() chi.Router {
 	// Подключаем логгер
 	r.Use(logger.Handler)
 
+	// Проверяем что узел от которого принимаем метрики находится в доверенной зоне
+	r.Use(middleware.CheckTrustedSubnet(c.trustedSubNet, c.cfg.IPAddrHeader))
+
 	// Подключаем проверку хэшей
-	hashCheck := hashcheck.New(sha256.New, c.hashKey, "HashSHA256")
+	hashCheck := hashcheck.New(sha256.New, c.cfg.HashKey, "HashSHA256")
 	//r.Use(hashCheck.Handler)
 
 	// Установка значений

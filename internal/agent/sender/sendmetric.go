@@ -32,23 +32,7 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 	logger.Debug().Str("endpoint", endpoint).Msg("Endpoint")
 	logger.Debug().Str("metric", string(rd)).Str("endpoint", endpoint).Msg("trying to send metric")
 
-	// Создаем сжатый поток (до оптимизации по инкременту 18)
-	//buf := bytes.NewBuffer(nil)
-	//zw := gzip.NewWriter(buf)
-	//
-	//// И записываем в него данные
-	//_, err = zw.Write(rd)
-	//if err != nil {
-	//	logger.Error().Err(err).Msg("can't write into gzip writer")
-	//	return
-	//}
-	//err = zw.Close()
-	//if err != nil {
-	//	logger.Error().Err(err).Msg("can't close gzip writer")
-	//	return
-	//}
-	//rdGz := buf.Bytes()
-	// После оптимизации
+	// Создаем сжатый поток
 	rdGz, err := zipper.ZippedBytes(rd)
 	if err != nil {
 		logger.Error().Err(err).Msg("sender - sendMetric - zipper.ZippedBytes")
@@ -78,6 +62,10 @@ func (j *Sender) sendMetric(mt *app.Metrics) {
 		SetBody(rdGz).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip")
+
+	if j.ip != nil && j.cfg.IPAddrHeader != "" {
+		req.SetHeader(j.cfg.IPAddrHeader, j.ip.String())
+	}
 
 	for _, ri := range j.cfg.RetryIntervals {
 		resp, err = req.Post(endpoint)

@@ -64,7 +64,7 @@ func TestController(t *testing.T) {
 	store := metricmemstorage.NewMemStorage(dumper, 10, false)
 	a := metricservice.New(store)
 	hl := health.New()
-	contr := New(a, config.Server{}, hl, "")
+	contr := New(a, config.Server{}, hl)
 	ts := httptest.NewServer(contr.GetRouter())
 	defer ts.Close()
 

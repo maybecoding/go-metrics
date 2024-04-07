@@ -58,7 +58,7 @@ func (a *App) Init() *App {
 	} else {
 		dumper := metricmemstorage.NewDumper(a.cfg.BackupStorage.Path)
 		memStore := metricmemstorage.NewMemStorage(dumper, a.cfg.BackupStorage.Interval, a.cfg.BackupStorage.IsRestoreOnUp)
-		// ЗАПУСКАЕМ бэкапирование мэмстора
+		// START mem store backup
 		a.starter.OnRun(memStore.StartBackupTimer)
 		a.store = memStore
 	}
@@ -71,8 +71,8 @@ func (a *App) InitHandler() *App {
 	if a.metricSrv == nil {
 		panic("first app.Start method must be called, service is not initialized")
 	}
-	// Создаем хэндлер
-	a.handler = handlers.New(a.metricSrv, a.cfg.Server, a.hl, a.cfg.Server.HashKey)
+	// Create  handler
+	a.handler = handlers.New(a.metricSrv, a.cfg.Server, a.hl)
 	// ЗАПУСКАЕМ контроллер
 	a.starter.OnRun(a.handler.Start)
 	// После завершения приложения потушим сервер

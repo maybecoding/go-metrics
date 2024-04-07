@@ -23,6 +23,7 @@ func getDefaultConfig() *Config {
 			HashKey:          "",
 			NumWorkers:       1,
 			CryptoKey:        "",
+			IPAddrHeader:     "X-Real-IP",
 		},
 
 		Log: Log{

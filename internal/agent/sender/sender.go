@@ -5,19 +5,23 @@ import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/internal/agent/config"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
+	"net"
 	"sync"
 )
 
 type Sender struct {
 	ctx context.Context
 	cfg config.Sender
+	ip  net.IP
 }
 
 func New(ctx context.Context, cfg config.Sender) *Sender {
-	return &Sender{
+	s := &Sender{
 		ctx: ctx,
 		cfg: cfg,
 	}
+	s.identifyIP()
+	return s
 }
 
 func (j *Sender) Worker(inpM chan *app.Metrics, id int) {
@@ -47,12 +51,6 @@ func (j *Sender) Run(inpM chan *app.Metrics) {
 
 	for i := 0; i < j.cfg.NumWorkers; i += 1 {
 		ii := i
-
-		//select {
-		//case <-j.ctx.Done():
-		//	return
-		//default:
-		//}
 
 		wg.Add(1)
 		go func() {

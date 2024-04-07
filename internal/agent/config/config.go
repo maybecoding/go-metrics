@@ -30,6 +30,7 @@ type (
 		CryptoKey        string          `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
 		RetryIntervals   []time.Duration `default:"1s,3s,5s"`
 		NumWorkers       int             `default:"1" flg:"l" flgU:"num workers for send metrics" env:"RATE_LIMIT"`
+		IPAddrHeader     string          `default:"X-Real-IP"`
 	}
 
 	Log struct {
