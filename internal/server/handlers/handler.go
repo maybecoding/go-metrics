@@ -28,12 +28,16 @@ type Handler struct {
 }
 
 func New(app *metricservice.MetricService, cfg config.Server, hl *health.Health) *Handler {
-	_, ipNet, err := net.ParseCIDR(cfg.TrustedSubnet)
-	if err != nil {
-		logger.Error().Err(err).Msg("can't parse trusted subnet")
-		ipNet = nil
+	h := &Handler{metric: app, health: hl, cfg: cfg, pprofAddress: cfg.PprofAddress}
+	if cfg.TrustedSubnet != "" {
+		_, ipNet, err := net.ParseCIDR(cfg.TrustedSubnet)
+		if err != nil {
+			logger.Error().Err(err).Msg("can't parse trusted subnet")
+		} else {
+			h.trustedSubNet = ipNet
+		}
 	}
-	return &Handler{metric: app, health: hl, cfg: cfg, pprofAddress: cfg.PprofAddress, trustedSubNet: ipNet}
+	return h
 }
 
 func (c *Handler) Start(_ context.Context) error {
@@ -66,7 +70,7 @@ var mtsPool = sync.Pool{
 }
 
 func (c *Handler) Shutdown(_ context.Context) error {
-	logger.Info().Msg("Ctrl + C command got, shutting down server")
+	logger.Info().Msg("Stop http server")
 	_ = c.pprofServer.Shutdown(context.Background())
 	return c.server.Shutdown(context.Background())
 }

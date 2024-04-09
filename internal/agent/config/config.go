@@ -19,12 +19,12 @@ type (
 	}
 	App struct {
 		CollectInterval time.Duration `default:"2s" flg:"p" flgU:"metric poll interval" env:"POLL_INTERVAL"`
-		SendInterval    time.Duration `default:"10s" flg:"r" flgU:"metric report interval" env:"REPORT_INTERVAL"`
+		SendInterval    time.Duration `default:"2s" flg:"r" flgU:"metric report interval" env:"REPORT_INTERVAL"`
 	}
 
 	Sender struct {
-		Server           string `default:"localhost:8080" flg:"a" flgU:"HTTP server endpoint" env:"ADDRESS"`
-		Method           string
+		Server           string          `default:"localhost:8080" flg:"a" flgU:"HTTP server endpoint" env:"ADDRESS"`
+		GRPCServer       string          `flg:"grpc" flgU:"if set instead of http client using gRPC client for send metrics" env:"GRPC"`
 		HashKey          string          `flg:"k" flgU:"hash key" env:"KEY"`
 		EndpointTemplate string          `default:"%s://%s/update/"`
 		CryptoKey        string          `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
@@ -101,4 +101,7 @@ func New() (*Config, error) {
 
 func (cfg *Config) LogDebug() {
 	logger.Debug().Interface("cfg", cfg).Interface("args", os.Args).Msg("server configuration")
+}
+func (cfg *Config) UseGRPC() bool {
+	return cfg.Sender.GRPCServer != ""
 }

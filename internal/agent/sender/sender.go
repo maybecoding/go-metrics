@@ -45,6 +45,7 @@ func (j *Sender) Worker(inpM chan *app.Metrics, id int) {
 }
 
 func (j *Sender) Run(inpM chan *app.Metrics) {
+	logger.Info().Msg("Run http sender")
 	// Инициализируем массив с gzip-writer
 
 	wg := &sync.WaitGroup{}

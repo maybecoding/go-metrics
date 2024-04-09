@@ -17,5 +17,6 @@ func main() {
 	sapp.New(cfg).
 		Init().
 		InitHandler().
+		InitGRPCService().
 		Run()
 }

@@ -23,6 +23,7 @@ type (
 	// Server - struct for server config
 	Server struct {
 		Address       string `default:"localhost:8080" flg:"a" flgU:"Endpoint HTTP-server address" env:"ADDRESS"`
+		GRPCAddress   string `default:"localhost:9090" flag:"grpc" flgU:"Endpoint gRPC-server address" env:"GRPC_ADDRESS"`
 		PprofAddress  string `default:"localhost:8090"`
 		HashKey       string `flg:"k" flgU:"hash key" env:"KEY"`
 		CryptoKey     string `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`

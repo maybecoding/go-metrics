@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package proto_v1;
+
+import "metric_msg.proto";
+
+option go_package = "pkg/metric_v1";
+
+
+
+service MetricsV1 {
+  rpc List(Empty) returns (MetricList);
+  rpc SetAll(MetricList) returns (Empty);
+  rpc Set(Metric) returns (Empty);
+  rpc Get(MetricHeader) returns (Metric);
+}

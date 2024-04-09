@@ -11,8 +11,9 @@ import (
 
 func getDefaultConfig() *Config {
 	return &Config{
-		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: "", CryptoKey: "", IPAddrHeader: "X-Real-IP"},
-		Log:    Log{Level: "debug"},
+		Server: Server{Address: "localhost:8080", PprofAddress: "localhost:8090", HashKey: "", CryptoKey: "",
+			IPAddrHeader: "X-Real-IP", GRPCAddress: "localhost:9090"},
+		Log: Log{Level: "debug"},
 		BackupStorage: BackupStorage{
 			Interval:      time.Second * 300,
 			Path:          "/tmp/metric-db.json",

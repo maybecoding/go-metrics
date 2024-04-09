@@ -117,7 +117,6 @@ func walk(v reflect.Value, fn Fn) error {
 		}
 
 		// По всем остальным просто вызываем fill
-		fmt.Println("name", fldT.Name)
 		err := fill(fld.Addr(), value)
 		if err != nil {
 			return fmt.Errorf("error parse field %s: %w", fldT.Name, err)

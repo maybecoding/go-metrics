@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"encoding/hex"
-	"fmt"
 	"hash"
 	"io"
 	"net/http"
@@ -40,7 +39,7 @@ func (hc *HashCheck) HandlerFunc(handlerFn http.HandlerFunc) http.HandlerFunc {
 			hsSum := hs.Sum(nil)
 			hsHex := hex.EncodeToString(hsSum)
 			hsHexReq := r.Header.Get(hc.headerName)
-			fmt.Println("1", hsHex, "2", hsHexReq)
+
 			if hsHex != hsHexReq {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
