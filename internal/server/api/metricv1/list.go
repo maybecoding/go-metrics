@@ -1,8 +1,8 @@
-package metric_v1
+package metricv1
 
 import (
 	"context"
-	pb "github.com/maybecoding/go-metrics.git/pkg/metric_v1"
+	pb "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

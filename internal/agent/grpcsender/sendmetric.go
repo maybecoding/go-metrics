@@ -3,7 +3,7 @@ package grpcsender
 import (
 	"github.com/maybecoding/go-metrics.git/internal/agent/app"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	pb "github.com/maybecoding/go-metrics.git/pkg/metric_v1"
+	pb "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"time"
 )
 

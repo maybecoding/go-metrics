@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto_v1;
 
-option go_package = "pkg/metric_v1";
+option go_package = "pkg/metricv1";
 
 message Metric {
   string id = 1;

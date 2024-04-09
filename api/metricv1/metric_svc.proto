@@ -4,7 +4,7 @@ package proto_v1;
 
 import "metric_msg.proto";
 
-option go_package = "pkg/metric_v1";
+option go_package = "pkg/metricv1";
 
 
 

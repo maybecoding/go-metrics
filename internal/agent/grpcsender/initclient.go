@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/maybecoding/go-metrics.git/internal/agent/hasher"
-	pb "github.com/maybecoding/go-metrics.git/pkg/metric_v1"
+	pb "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"

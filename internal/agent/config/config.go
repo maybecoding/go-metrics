@@ -19,7 +19,7 @@ type (
 	}
 	App struct {
 		CollectInterval time.Duration `default:"2s" flg:"p" flgU:"metric poll interval" env:"POLL_INTERVAL"`
-		SendInterval    time.Duration `default:"2s" flg:"r" flgU:"metric report interval" env:"REPORT_INTERVAL"`
+		SendInterval    time.Duration `default:"10s" flg:"r" flgU:"metric report interval" env:"REPORT_INTERVAL"`
 	}
 
 	Sender struct {

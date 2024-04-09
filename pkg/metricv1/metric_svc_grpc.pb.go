@@ -4,7 +4,7 @@
 // - protoc             v3.20.3
 // source: metric_svc.proto
 
-package metric_v1
+package metricv1
 
 import (
 	context "context"

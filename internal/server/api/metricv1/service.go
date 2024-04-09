@@ -1,10 +1,10 @@
-package metric_v1
+package metricv1
 
 import (
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	srv "github.com/maybecoding/go-metrics.git/pkg/metric_v1"
+	srv "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"google.golang.org/grpc"
 	"net"
 )
