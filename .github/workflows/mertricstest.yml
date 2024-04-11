@@ -56,16 +56,15 @@ jobs:
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
 
+      - name: Generate proto and gRPC
+        run: |
+          make proto_svc
+          make proto_svc  
 
       - name: Build server binary
         run: |
           cd cmd/server
           go build -buildvcs=false -o server
-
-      - name: Generate proto and gRPC
-        run: |
-          make proto_svc
-          make proto_svc  
 
       - name: "Code increment #1"
         if: |
