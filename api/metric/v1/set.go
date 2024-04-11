@@ -1,11 +1,11 @@
-package metricv1
+package v1
 
 import (
 	"context"
 	"errors"
+	"github.com/maybecoding/go-metrics.git/api/metric/v1/pb"
 	"github.com/maybecoding/go-metrics.git/internal/server/entity"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
-	pb "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

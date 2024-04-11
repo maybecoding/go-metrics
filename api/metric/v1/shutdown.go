@@ -1,4 +1,4 @@
-package metricv1
+package v1
 
 import (
 	"context"

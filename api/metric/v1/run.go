@@ -1,12 +1,12 @@
-package metricv1
+package v1
 
 import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/maybecoding/go-metrics.git/internal/server/api/metricv1/interseptor"
+	"github.com/maybecoding/go-metrics.git/api/metric/v1/interseptor"
+	"github.com/maybecoding/go-metrics.git/api/metric/v1/pb"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	pb "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"

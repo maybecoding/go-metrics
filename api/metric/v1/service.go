@@ -1,16 +1,16 @@
-package metricv1
+package v1
 
 import (
+	pb "github.com/maybecoding/go-metrics.git/api/metric/v1/pb"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/metricservice"
 	"github.com/maybecoding/go-metrics.git/pkg/logger"
-	srv "github.com/maybecoding/go-metrics.git/pkg/metricv1"
 	"google.golang.org/grpc"
 	"net"
 )
 
 type Service struct {
-	srv.UnimplementedMetricsV1Server
+	pb.UnimplementedMetricsV1Server
 	grpcS         *grpc.Server
 	metric        *metricservice.MetricService
 	cfg           config.Server

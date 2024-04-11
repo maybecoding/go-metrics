@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package proto_v1;
+package v1;
 
-option go_package = "pkg/metricv1";
+option go_package = "api/metric/v1/pb";
 
 message Metric {
   string id = 1;

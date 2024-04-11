@@ -117,8 +117,8 @@ cert:
 
 .PHONY: protoc_msg
 proto_msg:
-	protoc --go_out=. --go_opt=paths=import api/metricv1/metric_msg.proto
+	protoc --go_out=. --go_opt=paths=import pkg/api/metric/v1/metric_msg.proto
 
 .PHONY: protoc_svc
 proto_svc:
-	protoc --go-grpc_out=. --go-grpc_opt=paths=import api/metricv1/metric_svc.proto --proto_path=api/metricv1
+	protoc --go-grpc_out=. --go-grpc_opt=paths=import pkg/api/metric/v1/metric_svc.proto --proto_path=pkg/api/metric/v1

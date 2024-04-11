@@ -29,3 +29,6 @@ vendor/
 .DS_Store
 
 db/data/
+
+#autogen pb
+api/metric/v1/pb

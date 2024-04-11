@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	pb "github.com/maybecoding/go-metrics.git/internal/server/api/metricv1"
+	pb "github.com/maybecoding/go-metrics.git/api/metric/v1"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
