@@ -30,5 +30,5 @@ vendor/
 
 db/data/
 
-#autogen pb
-api/metric/v1/pb
+#autogen pb procot
+#api/metric/v1/pb
