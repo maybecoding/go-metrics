@@ -23,13 +23,14 @@ type (
 	}
 
 	Sender struct {
-		Server           string `default:"localhost:8080" flg:"a" flgU:"HTTP server endpoint" env:"ADDRESS"`
-		Method           string
+		Server           string          `default:"localhost:8080" flg:"a" flgU:"HTTP server endpoint" env:"ADDRESS"`
+		GRPCServer       string          `flg:"grpc" flgU:"if set instead of http client using gRPC client for send metrics" env:"GRPC"`
 		HashKey          string          `flg:"k" flgU:"hash key" env:"KEY"`
 		EndpointTemplate string          `default:"%s://%s/update/"`
 		CryptoKey        string          `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
 		RetryIntervals   []time.Duration `default:"1s,3s,5s"`
 		NumWorkers       int             `default:"1" flg:"l" flgU:"num workers for send metrics" env:"RATE_LIMIT"`
+		IPAddrHeader     string          `default:"X-Real-IP"`
 	}
 
 	Log struct {
@@ -100,4 +101,7 @@ func New() (*Config, error) {
 
 func (cfg *Config) LogDebug() {
 	logger.Debug().Interface("cfg", cfg).Interface("args", os.Args).Msg("server configuration")
+}
+func (cfg *Config) UseGRPC() bool {
+	return cfg.Sender.GRPCServer != ""
 }

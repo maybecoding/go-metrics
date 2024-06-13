@@ -22,10 +22,13 @@ type (
 	}
 	// Server - struct for server config
 	Server struct {
-		Address      string `default:"localhost:8080" flg:"a" flgU:"Endpoint HTTP-server address" env:"ADDRESS"`
-		PprofAddress string `default:"localhost:8090"`
-		HashKey      string `flg:"k" flgU:"hash key" env:"KEY"`
-		CryptoKey    string `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
+		Address       string `default:"localhost:8080" flg:"a" flgU:"Endpoint HTTP-server address" env:"ADDRESS"`
+		GRPCAddress   string `default:"localhost:9090" flag:"grpc" flgU:"Endpoint gRPC-server address" env:"GRPC_ADDRESS"`
+		PprofAddress  string `default:"localhost:8090"`
+		HashKey       string `flg:"k" flgU:"hash key" env:"KEY"`
+		CryptoKey     string `flg:"crypto-key" flgU:"path to certificate" env:"CRYPTO_KEY"`
+		TrustedSubnet string `flg:"t" flgU:"trusted subnet" env:"TRUSTED_SUBNET"`
+		IPAddrHeader  string `default:"X-Real-IP"`
 	}
 	// Log - struct for log config
 	Log struct {
@@ -55,6 +58,7 @@ type FileConfig struct {
 	DatabaseDSN   string `json:"database_dsn"`
 	CryptoKey     string `json:"crypto_key"`
 	Restore       bool   `json:"restore"`
+	TrustedSubnet string `json:"trusted_subnet"`
 }
 
 // NewConfig - constructor for config structures, reads params from flags and env, env overrides flags
@@ -107,6 +111,9 @@ func NewConfig() (*Config, error) {
 		}
 		if cfg.Server.CryptoKey == "" {
 			cfg.Server.CryptoKey = fCfg.CryptoKey
+		}
+		if cfg.Server.TrustedSubnet == "" {
+			cfg.Server.TrustedSubnet = fCfg.TrustedSubnet
 		}
 	}
 	return cfg, nil

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	pb "github.com/maybecoding/go-metrics.git/api/metric/v1"
 	"github.com/maybecoding/go-metrics.git/internal/server/config"
 	"github.com/maybecoding/go-metrics.git/internal/server/dbstorage"
 	"github.com/maybecoding/go-metrics.git/internal/server/handlers"
@@ -16,12 +17,13 @@ import (
 )
 
 type App struct {
-	store     metricservice.Store
-	metricSrv *metricservice.MetricService
-	handler   *handlers.Handler
-	starter   *starter.Starter
-	cfg       *config.Config
-	hl        *health.Health
+	store       metricservice.Store
+	metricSrv   *metricservice.MetricService
+	handler     *handlers.Handler
+	starter     *starter.Starter
+	cfg         *config.Config
+	hl          *health.Health
+	gRPCService *pb.Service
 }
 
 func New(cfg *config.Config) *App {
@@ -58,7 +60,7 @@ func (a *App) Init() *App {
 	} else {
 		dumper := metricmemstorage.NewDumper(a.cfg.BackupStorage.Path)
 		memStore := metricmemstorage.NewMemStorage(dumper, a.cfg.BackupStorage.Interval, a.cfg.BackupStorage.IsRestoreOnUp)
-		// ЗАПУСКАЕМ бэкапирование мэмстора
+		// START mem store backup
 		a.starter.OnRun(memStore.StartBackupTimer)
 		a.store = memStore
 	}
@@ -71,12 +73,26 @@ func (a *App) InitHandler() *App {
 	if a.metricSrv == nil {
 		panic("first app.Start method must be called, service is not initialized")
 	}
-	// Создаем хэндлер
-	a.handler = handlers.New(a.metricSrv, a.cfg.Server, a.hl, a.cfg.Server.HashKey)
+	// Create  handler
+	a.handler = handlers.New(a.metricSrv, a.cfg.Server, a.hl)
 	// ЗАПУСКАЕМ контроллер
 	a.starter.OnRun(a.handler.Start)
 	// После завершения приложения потушим сервер
 	a.starter.OnShutdown(a.handler.Shutdown)
+	return a
+}
+
+func (a *App) InitGRPCService() *App {
+	if a.metricSrv == nil {
+		panic("first app.Start method must be called, service is not initialized")
+	}
+	// Create gRPC service
+	a.gRPCService = pb.New(a.metricSrv, a.cfg.Server)
+	// On Run app
+	a.starter.OnRun(a.gRPCService.Run)
+	// On Stop App
+	a.starter.OnShutdown(a.gRPCService.Shutdown)
+
 	return a
 }
 
